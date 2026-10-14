@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+scikit-learn
+requests
+beautifulsoup4
+reportlab
+python-multipart

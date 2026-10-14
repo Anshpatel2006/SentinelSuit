@@ -1,0 +1,80 @@
+{
+    "timestamp": 1789878381.8379917,
+    "source_ip": "192.168.0.1",
+    "target_ip": "192.168.0.108",
+    "severity": "HIGH",
+    "risk_score": 85,
+    "action": "SCAN",
+    "signature_alert": [
+        {
+            "timestamp": "2026-09-20T09:56:21.816765",
+            "signature": "HIGH_PACKET_RATE",
+            "severity": "MEDIUM",
+            "description": "Unusually high packet rate detected.",
+            "source_ip": "192.168.0.1",
+            "destination_ip": "192.168.0.108",
+            "destination_port": 1934
+        },
+        {
+            "timestamp": "2026-09-20T09:56:21.816781",
+            "signature": "HIGH_FORWARD_RATE",
+            "severity": "MEDIUM",
+            "description": "Unusually high forward packet rate detected.",
+            "source_ip": "192.168.0.1",
+            "destination_ip": "192.168.0.108",
+            "destination_port": 1934
+        },
+        {
+            "timestamp": "2026-09-20T09:56:21.816786",
+            "signature": "PORT_SCAN",
+            "severity": "HIGH",
+            "description": "Source IP scanned multiple destination ports.",
+            "source_ip": "192.168.0.1",
+            "destination_ip": "192.168.0.108",
+            "destination_port": 1934
+        }
+    ],
+    "ml_prediction": "BENIGN",
+    "ml_confidence": 0.2067,
+    "analysis": {
+        "incident_summary": "A reconnaissance activity was detected on internal host 192.168.0.108 originating from 192.168.0.1. The traffic exhibited high packet and forward rates with a classic port\u2011scan pattern targeting multiple TCP ports. Nmap results confirmed the host is up and revealed three open services (msrpc, netbios-ssn, microsoft-ds) that could be leveraged for lateral movement if exploited. No direct compromise was observed, but the scan indicates an adversary is mapping the network.",
+        "attack_type": "Port Scanning",
+        "severity": "HIGH",
+        "risk_score": 85,
+        "mitre_attack": {
+            "technique_id": "T1046",
+            "technique_name": "Network Service Scanning",
+            "tactic": "Discovery"
+        },
+        "traffic_analysis": {
+            "source_ip": "192.168.0.1",
+            "target_ip": "192.168.0.108",
+            "protocol": "TCP",
+            "packet_observation": "High packet rate, high forward rate, multiple port attempts across TCP 1\u201365535"
+        },
+        "nmap_analysis": {
+            "host_status": "up",
+            "services_found": [
+                "msrpc",
+                "netbios-ssn",
+                "microsoft-ds"
+            ],
+            "security_observation": "Open SMB and RPC services present; potential entry points for exploitation if vulnerabilities exist."
+        },
+        "indicators_of_compromise": {
+            "source_ip": "192.168.0.1",
+            "target_ip": "192.168.0.108",
+            "signature": "PORT_SCAN",
+            "protocol": "TCP"
+        },
+        "impact_analysis": "The scan is a reconnaissance step; no payload delivery or data exfiltration detected. However, the presence of open SMB/RPC services could be exploited in subsequent stages, increasing the risk of lateral movement or privilege escalation.",
+        "recommendations": [
+            "Block source IP 192.168.0.1 at perimeter firewall and internal ACLs.",
+            "Enable and tune IDS/IPS to alert on port\u2011scan patterns and high\u2011rate traffic.",
+            "Apply latest patches for SMB and RPC services; consider disabling unused services.",
+            "Implement network segmentation and least\u2011privilege access to critical hosts.",
+            "Conduct a thorough audit of internal network topology and review firewall rules for unnecessary open ports."
+        ],
+        "soc_conclusion": "The activity represents a high\u2011severity reconnaissance attempt. While no compromise has occurred, the adversary is actively probing for exploitable services. Immediate containment actions and continuous monitoring are essential to prevent potential exploitation of the identified open services."
+    }
+}

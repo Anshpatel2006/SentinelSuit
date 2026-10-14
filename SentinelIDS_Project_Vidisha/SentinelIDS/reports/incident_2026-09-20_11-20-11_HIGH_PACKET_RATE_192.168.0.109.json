@@ -1,0 +1,97 @@
+{
+    "timestamp": 1789879687.714326,
+    "source_ip": "192.168.0.111",
+    "target_ip": "192.168.0.109",
+    "severity": "HIGH",
+    "risk_score": 85,
+    "action": "SCAN",
+    "signature_alert": [
+        {
+            "timestamp": "2026-09-20T10:18:07.690003",
+            "signature": "HIGH_PACKET_RATE",
+            "severity": "MEDIUM",
+            "description": "Unusually high packet rate detected.",
+            "source_ip": "192.168.0.111",
+            "destination_ip": "192.168.0.109",
+            "destination_port": 445
+        },
+        {
+            "timestamp": "2026-09-20T10:18:07.690015",
+            "signature": "HIGH_FORWARD_RATE",
+            "severity": "MEDIUM",
+            "description": "Unusually high forward packet rate detected.",
+            "source_ip": "192.168.0.111",
+            "destination_ip": "192.168.0.109",
+            "destination_port": 445
+        },
+        {
+            "timestamp": "2026-09-20T10:18:07.690018",
+            "signature": "PORT_SCAN",
+            "severity": "HIGH",
+            "description": "Source IP scanned multiple destination ports.",
+            "source_ip": "192.168.0.111",
+            "destination_ip": "192.168.0.109",
+            "destination_port": 445
+        }
+    ],
+    "ml_prediction": "BENIGN",
+    "ml_confidence": 0.213,
+    "analysis": {
+        "incident_summary": "High packet rate and port scan activity detected from internal host 192.168.0.111 targeting 192.168.0.109. The scan attempted to probe a wide range of TCP ports, all reported as filtered by Nmap, indicating defensive filtering but still exposing reconnaissance attempts.",
+        "attack_type": "Reconnaissance \u2013 Port Scanning",
+        "severity": "HIGH",
+        "risk_score": 85,
+        "mitre_attack": {
+            "technique_id": "T1046",
+            "technique_name": "Network Service Scanning",
+            "tactic": "Discovery"
+        },
+        "traffic_analysis": {
+            "source_ip": "192.168.0.111",
+            "target_ip": "192.168.0.109",
+            "protocol": "TCP",
+            "packet_observation": "High packet and forward rates with multiple port probes detected"
+        },
+        "nmap_analysis": {
+            "host_status": "up",
+            "services_found": [
+                "ftp",
+                "ssh",
+                "telnet",
+                "smtp",
+                "domain",
+                "http",
+                "pop3",
+                "rpcbind",
+                "msrpc",
+                "netbios-ssn",
+                "imap",
+                "https",
+                "microsoft-ds",
+                "imaps",
+                "pop3s",
+                "pptp",
+                "mysql",
+                "ms-wbt-server",
+                "vnc",
+                "http-proxy"
+            ],
+            "security_observation": "All services reported as filtered, indicating active firewall/IDS protection but confirming scanning activity"
+        },
+        "indicators_of_compromise": {
+            "source_ip": "192.168.0.111",
+            "target_ip": "192.168.0.109",
+            "signature": "PORT_SCAN",
+            "protocol": "TCP"
+        },
+        "impact_analysis": "The activity represents a reconnaissance phase; no direct compromise observed. However, the high volume of scans could trigger rate limits, potentially disrupt legitimate traffic, and may precede exploitation attempts if vulnerabilities are discovered.",
+        "recommendations": [
+            "Block source IP 192.168.0.111 at perimeter firewall to prevent further scans.",
+            "Enable detailed logging and alerting for port scan activity to detect future reconnaissance.",
+            "Conduct a comprehensive vulnerability assessment on target host 192.168.0.109 to ensure no exploitable services are exposed.",
+            "Update IDS/IPS signatures and rules to better detect and mitigate high-rate scanning attempts.",
+            "Implement network segmentation and stricter access controls to limit internal scanning capabilities."
+        ],
+        "soc_conclusion": "The incident reflects a high\u2011severity internal reconnaissance attempt. Immediate containment via IP blocking and enhanced monitoring is recommended, coupled with proactive vulnerability management to mitigate potential exploitation. Continuous vigilance is essential to detect any escalation from reconnaissance to active compromise."
+    }
+}

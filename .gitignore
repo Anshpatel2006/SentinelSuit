@@ -1,0 +1,49 @@
+# Virtual environments
+.venv/
+venv/
+**/venv/
+**/.venv/
+env/
+**/env/
+
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Python cache & artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+**/.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter Checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.log
+
+# Large Archive Files & Backups
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Large raw datasets (>100MB exceeds GitHub file size limit)
+**/models/IDS_Complete_Results.csv
+**/models/Monday-WorkingHours.pcap_ISCX.csv
