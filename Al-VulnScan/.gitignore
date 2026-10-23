@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+reports/
+scan_history/
+scans/
+*.sqlite3
+*.db
+*.log
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/

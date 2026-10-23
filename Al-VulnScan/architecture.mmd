@@ -1,0 +1,22 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#07142b","primaryColor":"#0b1d3a","primaryTextColor":"#f6fbff","primaryBorderColor":"#dcecff","lineColor":"#e5f4ff","secondaryColor":"#082744","tertiaryColor":"#07142b","fontFamily":"ui-monospace,monospace"}}}%%
+flowchart TB
+    U["1 · User Input<br/>IP · hostname · CIDR"]
+    V["2 · Input Validation<br/>strict address · host · CIDR · port limits"]
+    N["3 · Nmap Scan Engine<br/>authorized confirmation · argv · timeout"]
+    X["4 · Nmap XML Parser<br/>host · port · state · service · CPE · script · OS"]
+    F["5 · Service Fingerprinting<br/>Nmap evidence · opt-in HTTP GET"]
+    R["6 · Vulnerability Rule Engine<br/>deterministic potential findings"]
+    E["7 · Evidence Engine<br/>source · confidence · uncertainty"]
+    C["8 · NVD CVE Lookup<br/>candidate · CPE/product/version status"]
+    A["9 · Local AI Analyzer<br/>optional Ollama · advisory only"]
+    S["10 · Deterministic Risk Scoring<br/>0–100 · independent of AI"]
+    Q["11 · Explainable AI<br/>observations · CVEs · uncertainty · risk factors"]
+    M["12 · Recommendation Engine<br/>evidence-linked · no automatic changes"]
+    G["13 · Report Generator<br/>Markdown · JSON · HTML"]
+    H["14 · Scan Storage & Comparison<br/>atomic JSON history · conservative diff"]
+
+    U --> V --> N --> X --> F --> R --> E --> C --> A --> S --> Q --> M --> G --> H
+    classDef stage fill:#0b1d3a,stroke:#e6f2ff,color:#f6fbff,stroke-width:2px;
+    classDef ai fill:#062c4b,stroke:#00d9f5,color:#00eaff,stroke-width:2px;
+    class U,V,N,X,F,R,E,C,S,M,G,H stage;
+    class A,Q ai;

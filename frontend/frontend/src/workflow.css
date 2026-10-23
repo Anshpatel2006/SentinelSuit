@@ -1,0 +1,101 @@
+.workflow-panel { overflow: hidden; }
+.workflow-flow { display: grid; justify-items: center; }
+.workflow-node {
+  width: min(100%, 720px);
+  padding: 12px 16px;
+  border: 1px solid #34506e;
+  background: #101e2e;
+  color: var(--text);
+  text-align: center;
+  font-size: 13px;
+}
+.workflow-node small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workflow-input { border-color: #368bb0; background: #0e748420; }
+.workflow-validation { border-color: #7b63bb; background: #6d4fa81f; }
+.workflow-intel { border-color: #ae8532; background: #b47d191a; }
+.workflow-risk { border-color: #d16b78; background: #be374b1a; }
+.workflow-output { border-color: #4c9d72; background: #22804e1f; }
+.workflow-arrow { color: #9bb2ca; font-size: 19px; line-height: 1.8; }
+.workflow-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 960px);
+  margin: 12px 0 6px;
+}
+.workflow-path {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.workflow-path h4 { margin: 0 0 5px; font-size: 13px; }
+.workflow-path p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.workflow-known { border-top: 3px solid var(--green); }
+.workflow-unknown { border-top: 3px solid var(--amber); }
+.service-online { color: var(--green); }
+.service-offline { color: var(--red); }
+.phishing-warning { margin-top: 10px; }
+.phishing-form { flex-wrap: wrap; }
+.phishing-form input { flex: 1; min-width: 180px; }
+.phishing-metric { min-height: 86px; }
+.phishing-model-stats { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.phishing-model-stats .stat-card { margin: 0; }
+.phishing-metric strong { font-size: 16px; }
+.phishing-model-stats span { display: block; color: var(--muted); font-size: 11px; }
+.phishing-model-stats strong { overflow-wrap: anywhere; }
+.report-action { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; }
+.recommended-response { border-left: 3px solid var(--cyan); }
+.module-grid-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dashboard-footnote { margin: 18px 0; color: var(--muted); font-size: 11px; }
+.workflow-stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.workflow-stage { padding: 12px; border: 1px solid var(--line); background: var(--surface); }
+.workflow-stage strong { display: block; margin-bottom: 4px; font-size: 12px; }
+.workflow-stage span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.vuln-form-grid { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 12px; align-items: end; }
+.vuln-field { display: grid; gap: 7px; }
+.vuln-field label { color: var(--muted); font-size: 12px; }
+.vuln-field input, .vuln-field select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  background: #071523;
+  color: var(--text);
+  padding: 10px 12px;
+}
+.vuln-authorize {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.vuln-authorize input { margin-top: 3px; accent-color: var(--cyan); }
+.vuln-details { display: grid; gap: 12px; }
+.vuln-details pre { overflow: auto; max-height: 420px; padding: 14px; border: 1px solid var(--line); background: #07101d; color: #c4e6ec; font: 11px/1.6 'DM Mono', monospace; }
+.vuln-findings { display: grid; gap: 10px; }
+.vuln-finding { padding: 14px; border: 1px solid var(--line); background: var(--surface); }
+.vuln-finding p { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.vuln-finding-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.vuln-finding details { margin-top: 10px; color: var(--cyan); font-size: 12px; }
+.vuln-finding details pre { max-height: 240px; margin-top: 8px; }
+.vuln-result-heading { margin-top: 24px; }
+.vuln-safety-note { margin-top: 12px; }
+.table-empty { padding: 15px 10px; }
+@media (max-width: 900px) {
+  .module-grid-four { grid-template-columns: 1fr; }
+}
+@media (max-width: 580px) {
+  .workflow-branches, .vuln-form-grid { grid-template-columns: 1fr; }
+  .phishing-form { align-items: stretch; }
+  .phishing-form .button { width: 100%; }
+  .workflow-node { font-size: 12px; }
+}

@@ -27,6 +27,7 @@ Storage structure:
 """
 
 import json
+import logging
 import os
 import re
 import tempfile
@@ -36,6 +37,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from config import SCAN_STORAGE_DIR
+
+logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # CONFIGURATION
@@ -43,7 +48,7 @@ from typing import Any, Optional
 
 BASE_DIR = Path(__file__).resolve().parent
 
-DEFAULT_STORAGE_DIR = BASE_DIR / "scans"
+DEFAULT_STORAGE_DIR = SCAN_STORAGE_DIR
 
 SCAN_ID_PATTERN = re.compile(
     r"^\d{8}T\d{6}Z_[a-f0-9]{12}$"
@@ -258,6 +263,7 @@ class ScanStorage:
         scan_result: dict,
         nmap_xml: Optional[str] = None,
         metadata: Optional[dict] = None,
+        scan_id: Optional[str] = None,
     ) -> dict:
         """
         Save a scan result.
@@ -313,8 +319,8 @@ class ScanStorage:
                     "to contain Nmap XML."
                 )
 
-        # Create a unique ID for every saved scan.
-        scan_id = generate_scan_id()
+        # Allow the API to reserve a stable ID before its background scan starts.
+        scan_id = validate_scan_id(scan_id) if scan_id is not None else generate_scan_id()
 
         scan_dir = self._scan_directory(
             scan_id
@@ -536,8 +542,11 @@ class ScanStorage:
                 scans.append(metadata)
 
             except (ValueError, OSError):
-                # Skip unreadable entries rather than
-                # terminating the entire history listing.
+                logger.warning(
+                    "Skipping corrupt scan history entry at %s",
+                    directory,
+                    exc_info=True,
+                )
                 continue
 
         scans.sort(
@@ -549,6 +558,29 @@ class ScanStorage:
         )
 
         return scans
+
+    def update_scan(self, scan_id: str, updates: dict[str, Any]) -> dict:
+        """Merge report metadata into an existing scan without replacing history."""
+        if not isinstance(updates, dict):
+            raise TypeError("updates must be a dictionary.")
+        ensure_json_serializable(updates)
+        scan_dir = self._scan_directory(scan_id)
+        scan_file = scan_dir / "scan.json"
+        metadata_file = scan_dir / "metadata.json"
+        scan = read_json_file(scan_file)
+        scan.update(updates)
+        atomic_write_json(scan_file, scan)
+        if metadata_file.is_file():
+            metadata = read_json_file(metadata_file)
+            metadata.update(
+                {
+                    key: updates[key]
+                    for key in ("report_locations", "updated_at")
+                    if key in updates
+                }
+            )
+            atomic_write_json(metadata_file, metadata)
+        return scan
 
     # --------------------------------------------------------
     # Delete scan

@@ -1,834 +1,384 @@
+"""Bounded Nmap scanning with explicit authorization and XML output."""
+
+from __future__ import annotations
+
 import ipaddress
-import socket
-import nmap
+import logging
+import re
+import shutil
+import subprocess
+from datetime import datetime, timezone
+from typing import Any, Iterable
 
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.prompt import Prompt, IntPrompt
+from config import MAX_CIDR_SIZE, MAX_CUSTOM_PORTS, MAX_HOST_COUNT, SCAN_TIMEOUT
+from nmap_xml_parser import NmapXMLParseError, parse_nmap_xml
 
-console = Console()
+logger = logging.getLogger(__name__)
 
-
-# ============================================================
-# SCAN PROFILES
-# ============================================================
-
-SCAN_PROFILES = {
-    "1": {
+SCAN_PROFILES: dict[str, dict[str, str]] = {
+    "quick": {
         "name": "Quick Discovery",
-        "description": "Fast identification of exposed services.",
-        "when_to_use": (
-            "Use for initial reconnaissance, quick checks, "
-            "or scanning many hosts quickly."
-        ),
-        "scan_type": "quick",
+        "description": "Top 100 TCP ports with light version detection.",
     },
-    "2": {
+    "standard": {
         "name": "Standard Vulnerability Scan",
-        "description": (
-            "All TCP ports + service/version detection + CPE "
-            "+ safe security checks."
-        ),
-        "when_to_use": (
-            "Use for normal vulnerability assessment and CVE analysis. "
-            "This is the recommended/default scan."
-        ),
-        "scan_type": "standard",
+        "description": "Top 1,000 TCP ports with light version detection.",
     },
-    "3": {
-        "name": "Deep Vulnerability Scan",
-        "description": (
-            "TCP + UDP + service/version detection + OS detection "
-            "+ safe security checks."
-        ),
-        "when_to_use": (
-            "Use when you need deeper assessment and suspect "
-            "important UDP services or additional OS information."
-        ),
-        "scan_type": "deep",
+    "deep": {
+        "name": "Deep Scan",
+        "description": "All TCP ports; this may take substantially longer.",
     },
-    "4": {
-        "name": "UDP Assessment",
-        "description": "Dedicated UDP service discovery.",
-        "when_to_use": (
-            "Use when you specifically need to identify UDP attack "
-            "surfaces such as DNS, SNMP, NTP, DHCP, etc."
-        ),
-        "scan_type": "udp",
-    },
-    "5": {
-        "name": "Comprehensive Security Assessment",
+    "aggressive": {
+        "name": "Aggressive (All TCP Ports)",
         "description": (
-            "Broad TCP + UDP + OS + service/version detection "
-            "+ safe checks."
+            "All TCP ports with stronger service-version probes; longer and noisier. "
+            "Requires explicit confirmation. NSE scripts are not enabled."
         ),
-        "when_to_use": (
-            "Use for a full security assessment when scan time "
-            "is less important than maximum discovery coverage."
+    },
+    "all_tcp_udp": {
+        "name": "All TCP + UDP Ports",
+        "description": (
+            "All TCP and UDP ports with stronger service-version probes; may take "
+            "a very long time and UDP results can remain open|filtered. "
+            "Requires separate explicit confirmation."
         ),
-        "scan_type": "full",
+    },
+    "udp": {
+        "name": "UDP Scan",
+        "description": "Top 50 UDP ports; open|filtered is not confirmed open.",
+    },
+    "comprehensive": {
+        "name": "Comprehensive Scan",
+        "description": "Explicitly requested broader TCP inventory.",
+    },
+    "full": {
+        "name": "Comprehensive Scan",
+        "description": "Explicitly requested broader TCP inventory.",
     },
 }
 
+_HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
 
-# ============================================================
-# TARGET VALIDATION
-# ============================================================
 
-def validate_target(target):
-    target = target.strip()
-
-    if not target:
-        raise ValueError("Target cannot be empty.")
-
-    # IP address
+def target_host_count(target: str) -> int:
+    """Return the exact number of addresses in a validated scope."""
+    value = target.strip()
     try:
-        ipaddress.ip_address(target)
-        return target
+        return ipaddress.ip_network(value, strict=True).num_addresses
+    except ValueError:
+        try:
+            ipaddress.ip_address(value)
+            return 1
+        except ValueError:
+            return 1
+
+
+def validate_target(target: str) -> str:
+    """Validate an IP, strict CIDR network, or DNS hostname without resolving it."""
+    if not isinstance(target, str) or not target.strip():
+        raise ValueError("Target cannot be empty.")
+    target = target.strip()
+    if any(char.isspace() for char in target) or target.startswith("-"):
+        raise ValueError("Target contains invalid whitespace or option syntax.")
+
+    try:
+        address = ipaddress.ip_address(target)
+        return str(address)
     except ValueError:
         pass
 
-    # Hostname
-    try:
-        socket.gethostbyname(target)
-        return target
-    except socket.gaierror:
-        raise ValueError(f"Invalid target: {target}")
-
-
-# ============================================================
-# PORT VALIDATION
-# ============================================================
-
-def validate_ports(ports):
-    if not ports:
-        return None
-
-    validated = []
-
-    for port in ports:
+    if "/" in target:
         try:
-            port = int(port)
-        except ValueError:
-            raise ValueError(f"Invalid port: {port}")
-
-        if not 1 <= port <= 65535:
+            network = ipaddress.ip_network(target, strict=True)
+        except ValueError as exc:
+            raise ValueError("CIDR must be a valid network with its network address.") from exc
+        if network.num_addresses > MAX_CIDR_SIZE:
             raise ValueError(
-                f"Port {port} is invalid. "
-                "Port must be between 1 and 65535."
+                f"CIDR contains {network.num_addresses} addresses; "
+                f"the configured limit is {MAX_CIDR_SIZE}."
             )
+        if network.num_addresses > MAX_HOST_COUNT:
+            raise ValueError(
+                f"CIDR exceeds the configured host limit ({MAX_HOST_COUNT})."
+            )
+        return str(network)
 
-        validated.append(port)
+    if re.fullmatch(r"[0-9.]+", target):
+        raise ValueError("Malformed numeric IP address.")
 
-    return sorted(set(validated))
+    hostname = target.rstrip(".")
+    try:
+        ascii_hostname = hostname.encode("idna").decode("ascii")
+    except UnicodeError as exc:
+        raise ValueError("Hostname is not valid IDNA.") from exc
+    if not ascii_hostname or len(ascii_hostname) > 253:
+        raise ValueError("Hostname length is invalid.")
+    labels = ascii_hostname.split(".")
+    if any(not _HOST_LABEL.fullmatch(label) for label in labels):
+        raise ValueError("Target must be an IP, strict CIDR, or valid DNS hostname.")
+    if len(labels) > 1 and all(label.isdigit() for label in labels):
+        raise ValueError("Malformed numeric IP address.")
+    return ascii_hostname
 
 
-# ============================================================
-# SCAN ARGUMENT BUILDER
-# ============================================================
+def validate_ports(ports: Iterable[int | str] | str | None) -> list[int] | None:
+    """Validate a list or comma-separated string of TCP/UDP port numbers."""
+    if ports is None or ports == "":
+        return None
+    if isinstance(ports, str):
+        values: Iterable[int | str] = ports.split(",")
+    else:
+        values = ports
+    parsed: set[int] = set()
+    for item in values:
+        try:
+            port = int(item)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid port: {item!r}") from exc
+        if not 1 <= port <= 65535:
+            raise ValueError(f"Port {port} must be between 1 and 65535.")
+        parsed.add(port)
+    if not parsed:
+        return None
+    if len(parsed) > MAX_CUSTOM_PORTS:
+        raise ValueError(f"At most {MAX_CUSTOM_PORTS} custom ports are allowed.")
+    return sorted(parsed)
+
 
 def build_scan_arguments(
-    scan_type="standard",
-    custom_tcp_ports=None,
-    custom_udp_ports=None,
-):
-    """
-    Build Nmap arguments for each AI-VulnScan scan profile.
-
-    Profiles:
-        quick   -> Fast TCP discovery
-        standard -> Full TCP + service/version + safe NSE
-        deep    -> Full TCP + common UDP + OS + safe NSE
-        udp     -> Common UDP assessment
-        full    -> Full TCP + common UDP + OS + safe NSE
-    """
-
-    # --------------------------------------------------------
-    # TCP PORT CONFIGURATION
-    # --------------------------------------------------------
-
-    if custom_tcp_ports:
-        tcp_ports = ",".join(
-            map(str, custom_tcp_ports)
-        )
-    else:
-        # IMPORTANT:
-        # Do NOT expand this to 1,2,3,...65535.
-        # Nmap understands the range directly.
-        tcp_ports = "1-65535"
-
-    # --------------------------------------------------------
-    # UDP PORT CONFIGURATION
-    # --------------------------------------------------------
-
-    if custom_udp_ports:
-
-        udp_ports = ",".join(
-            map(str, custom_udp_ports)
-        )
-
-    else:
-
-        # Common UDP services.
-        udp_ports = (
-            "53,"       # DNS
-            "67-68,"    # DHCP
-            "69,"       # TFTP
-            "123,"      # NTP
-            "135,"      # MS RPC
-            "137-138,"  # NetBIOS
-            "161-162,"  # SNMP
-            "500,"      # ISAKMP
-            "514,"      # Syslog
-            "520,"      # RIP
-            "1900,"     # SSDP
-            "4500"      # IPsec NAT-T
-        )
-
-    # --------------------------------------------------------
-    # PROFILE 1 - QUICK DISCOVERY
-    # --------------------------------------------------------
-
-    if scan_type == "quick":
-
-        return (
-            "-Pn "
-            "-T4 "
-            "-sS "
-            "--top-ports 100 "
-            "-sV"
-        )
-
-    # --------------------------------------------------------
-    # PROFILE 2 - STANDARD VULNERABILITY SCAN
-    # --------------------------------------------------------
-
-    elif scan_type == "standard":
-
-        return (
-            "-Pn "
-            "-T4 "
-            "-sS "
-            f"-p T:{tcp_ports} "
-            "-sV "
-            "--script=safe"
-        )
-
-    # --------------------------------------------------------
-    # PROFILE 3 - DEEP VULNERABILITY SCAN
-    # --------------------------------------------------------
-
-    elif scan_type == "deep":
-
-        return (
-            "-Pn "
-            "-T4 "
-            "-sS "
-            "-sU "
-            f"-p T:{tcp_ports},U:{udp_ports} "
-            "-sV "
-            "-O "
-            "--script=safe"
-        )
-
-    # --------------------------------------------------------
-    # PROFILE 4 - UDP ASSESSMENT
-    # --------------------------------------------------------
-
-    elif scan_type == "udp":
-
-        return (
-            "-Pn "
-            "-T4 "
-            "-sU "
-            f"-p U:{udp_ports} "
-            "-sV"
-        )
-
-    # --------------------------------------------------------
-    # PROFILE 5 - COMPREHENSIVE SECURITY ASSESSMENT
-    # --------------------------------------------------------
-
-    elif scan_type == "full":
-
-        return (
-            "-Pn "
-            "-T4 "
-            "-sS "
-            "-sU "
-            f"-p T:{tcp_ports},U:{udp_ports} "
-            "-sV "
-            "-O "
-            "--script=safe"
-        )
-
-    else:
-
+    scan_type: str = "standard",
+    custom_tcp_ports: Iterable[int | str] | str | None = None,
+    custom_udp_ports: Iterable[int | str] | str | None = None,
+) -> list[str]:
+    """Build Nmap argv without shell parsing or shell command strings."""
+    if scan_type not in SCAN_PROFILES:
+        raise ValueError(f"Unknown scan profile: {scan_type}")
+    tcp_ports = validate_ports(custom_tcp_ports)
+    udp_ports = validate_ports(custom_udp_ports)
+    if scan_type == "aggressive" and (tcp_ports is not None or udp_ports is not None):
         raise ValueError(
-            f"Unknown scan type: {scan_type}"
+            "The aggressive profile scans all TCP ports and cannot be combined with custom ports."
+        )
+    if scan_type == "all_tcp_udp" and (tcp_ports is not None or udp_ports is not None):
+        raise ValueError(
+            "The all TCP and UDP profile scans all ports and cannot be combined with custom ports."
         )
 
-# ============================================================
-# CPE EXTRACTION
-# ============================================================
+    timing = "-T2" if scan_type == "udp" else "-T3"
+    if tcp_ports is not None or udp_ports is not None:
+        args = [timing, "-sV", "--version-light"]
+        selections: list[str] = []
+        if tcp_ports is not None:
+            args.append("-sT")
+            selections.append(f"T:{','.join(map(str, tcp_ports))}")
+        if udp_ports is not None:
+            args.append("-sU")
+            selections.append(f"U:{','.join(map(str, udp_ports))}")
+        args.extend(["-p", ",".join(selections)])
+    elif scan_type == "quick":
+        args = ["-sT", "-T3", "--top-ports", "100", "-sV", "--version-light"]
+    elif scan_type == "standard":
+        args = ["-sT", "-T3", "--top-ports", "1000", "-sV", "--version-light"]
+    elif scan_type == "deep":
+        args = ["-sT", "-T3", "-p-", "-sV", "--version-light"]
+    elif scan_type == "aggressive":
+        args = ["-sT", "-T3", "-p-", "-sV", "--version-intensity", "7"]
+    elif scan_type == "all_tcp_udp":
+        args = [
+            "-sT",
+            "-sU",
+            "-T2",
+            "-p",
+            "T:1-65535,U:1-65535",
+            "-sV",
+            "--version-intensity",
+            "7",
+        ]
+    elif scan_type == "udp":
+        args = ["-sU", "-T2", "--top-ports", "50", "-sV", "--version-light"]
+    else:
+        args = ["-sT", "-T3", "--top-ports", "2000", "-sV", "--version-light"]
 
-def extract_cpes(service):
-    cpes = service.get("cpe", [])
-
-    if isinstance(cpes, str):
-        cpes = [cpes]
-
-    if not cpes:
-        return []
-
-    return [
-        cpe.strip()
-        for cpe in cpes
-        if cpe and cpe.strip()
-    ]
-
-
-# ============================================================
-# VERSION ANALYSIS
-# ============================================================
-
-def determine_version_status(version):
-    if not version:
-        return "unknown"
-
-    version = version.strip()
-
-    if " or later" in version.lower():
-        return "range"
-
-    if any(symbol in version for symbol in ["-", " to "]):
-        return "range"
-
-    if any(symbol in version for symbol in ["+", "<", ">", "="]):
-        return "partial"
-
-    parts = version.split(".")
-
-    # Example: 7.0.15
-    if all(part.isdigit() for part in parts):
-        return "exact"
-
-    # Example: 2.4
-    if len(parts) >= 2 and all(
-        part.isdigit() for part in parts
-    ):
-        return "partial"
-
-    return "partial"
+    args.extend(["--reason"])
+    return args
 
 
-# ============================================================
-# SERVICE PARSER
-# ============================================================
-
-def parse_service(port, protocol, service):
-    version = service.get("version", "") or ""
-
+def _failure(target: str, profile: str, message: str, *, status: str = "failed") -> dict[str, Any]:
+    logger.error("Nmap scan %s for %s: %s", status, target, message)
+    now = datetime.now(timezone.utc).isoformat()
     return {
-        "port": int(port),
-        "protocol": protocol,
-
-        "state": service.get("state", ""),
-        "reason": service.get("reason", ""),
-
-        "service": service.get("name", "") or "",
-
-        "product": service.get("product", "") or "",
-
-        "version": version,
-
-        "version_exact": (
-            version
-            if determine_version_status(version) == "exact"
-            else ""
-        ),
-
-        "version_status": determine_version_status(version),
-
-        "extrainfo": service.get("extrainfo", "") or "",
-
-        "tunnel": service.get("tunnel", "") or "",
-
-        "method": service.get("method", "") or "",
-
-        "detection_confidence": service.get(
-            "conf",
-            service.get("confidence", "")
-        ),
-
-        "cpe": extract_cpes(service),
+        "target": target,
+        "scope": target,
+        "authorization_attested": True,
+        "scan_type": profile,
+        "status": status,
+        "scan_started": now,
+        "scan_finished": now,
+        "nmap_version": None,
+        "nmap_exit_code": None,
+        "nmap_stderr": "",
+        "scan_arguments": [],
+        "hosts": [],
+        "services": [],
+        "errors": [message],
+        "summary": {"total_services": 0, "tcp_services": 0, "udp_services": 0},
+        "nmap_xml": None,
     }
 
-
-# ============================================================
-# OS INFORMATION
-# ============================================================
-
-def parse_os(host):
-    os_matches = host.get("osmatch", [])
-
-    results = []
-
-    for match in os_matches:
-        results.append({
-            "name": match.get("name", ""),
-            "accuracy": match.get("accuracy", ""),
-            "line": match.get("line", ""),
-        })
-
-    return results
-
-
-# ============================================================
-# SCAN FUNCTION
-# ============================================================
 
 def scan_target(
-    target_ip,
-    scan_type="standard",
-    custom_tcp_ports=None,
-    custom_udp_ports=None,
-):
-    """
-    Main scanner.
-
-    Returns structured scan results that can later be passed
-    to the CVE engine and AI analyzer.
-    """
-
-    try:
-        target_ip = validate_target(target_ip)
-
-        custom_tcp_ports = validate_ports(custom_tcp_ports)
-        custom_udp_ports = validate_ports(custom_udp_ports)
-
-    except ValueError as e:
-        console.print(
-            f"[red]Validation error:[/red] {e}"
+    target_ip: str,
+    scan_type: str = "standard",
+    custom_tcp_ports: Iterable[int | str] | str | None = None,
+    custom_udp_ports: Iterable[int | str] | str | None = None,
+    *,
+    authorized: bool = False,
+    confirm_multiple_hosts: bool = False,
+    confirm_aggressive: bool = False,
+    confirm_all_ports: bool = False,
+    timeout: int | None = None,
+) -> dict[str, Any]:
+    """Scan an explicitly authorized scope and return one stable result mapping."""
+    target = validate_target(target_ip)
+    if not authorized:
+        raise PermissionError(
+            "Scanning requires explicit confirmation that the target is authorized."
         )
-        return None
+    count = target_host_count(target)
+    if count > 1 and not confirm_multiple_hosts:
+        raise PermissionError(
+            f"Scope contains {count} addresses; explicit multi-host confirmation is required."
+        )
+    if count > MAX_HOST_COUNT:
+        raise ValueError(f"Scope exceeds the configured host limit ({MAX_HOST_COUNT}).")
+    if scan_type == "aggressive" and not confirm_aggressive:
+        raise PermissionError(
+            "The aggressive all-TCP-ports profile requires explicit confirmation."
+        )
+    if scan_type == "all_tcp_udp" and not confirm_all_ports:
+        raise PermissionError(
+            "The all TCP and UDP ports profile requires explicit confirmation."
+        )
+    arguments = build_scan_arguments(scan_type, custom_tcp_ports, custom_udp_ports)
+    time_limit = timeout if timeout is not None else SCAN_TIMEOUT
+    if not isinstance(time_limit, int) or not 1 <= time_limit <= 3600:
+        raise ValueError("Scan timeout must be between 1 and 3600 seconds.")
 
-    arguments = build_scan_arguments(
-        scan_type=scan_type,
-        custom_tcp_ports=custom_tcp_ports,
-        custom_udp_ports=custom_udp_ports,
-    )
+    binary = shutil.which("nmap")
+    if binary is None:
+        return _failure(target, scan_type, "Nmap was not found on PATH; install Nmap first.")
 
-    console.print()
-
-    console.print(
-        Panel(
-            f"[bold cyan]Target:[/bold cyan] {target_ip}\n"
-            f"[bold cyan]Scan Profile:[/bold cyan] "
-            f"{SCAN_PROFILES.get(
-                next(
-                    (
-                        key
-                        for key, value in SCAN_PROFILES.items()
-                        if value["scan_type"] == scan_type
-                    ),
-                    "2",
+    command = [binary, target, *arguments, "--host-timeout", f"{time_limit}s", "-oX", "-"]
+    started = datetime.now(timezone.utc).isoformat()
+    logger.info("Starting authorized %s scan for scope %s", scan_type, target)
+    try:
+        process = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=time_limit,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        partial_xml = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else exc.stdout
+        stderr = exc.stderr.decode(errors="replace") if isinstance(exc.stderr, bytes) else exc.stderr
+        if partial_xml:
+            try:
+                parsed = parse_nmap_xml(partial_xml)
+            except NmapXMLParseError:
+                parsed = None
+            if parsed:
+                parsed.update(
+                    target=target,
+                    scope=target,
+                    scan_type=scan_type,
+                    status="partial",
+                    scan_started=started,
+                    scan_finished=datetime.now(timezone.utc).isoformat(),
+                    errors=[f"Scan exceeded the {time_limit}-second timeout."],
+                    nmap_xml=partial_xml,
+                    nmap_exit_code=None,
+                    nmap_stderr=(stderr or "")[:5000],
+                    scan_arguments=arguments,
+                    authorization_attested=True,
+                    multiple_hosts_confirmed=count > 1 and confirm_multiple_hosts,
                 )
-            )['name']}\n"
-            f"[bold cyan]Nmap:[/bold cyan] {arguments}",
-            title="AI-VulnScan",
-            border_style="cyan",
-        )
-    )
+                return _add_summary(parsed)
+        return _failure(target, scan_type, f"Scan exceeded the {time_limit}-second timeout.", status="partial")
+    except OSError as exc:
+        return _failure(target, scan_type, f"Could not execute Nmap: {exc}")
 
-    console.print(
-        "[yellow]Starting Nmap scan...[/yellow]"
-    )
-
-    nm = nmap.PortScanner()
-
+    xml_text = process.stdout or ""
     try:
-        nm.scan(
-            hosts=target_ip,
-            arguments=arguments,
-        )
+        result = parse_nmap_xml(xml_text)
+    except NmapXMLParseError as exc:
+        detail = process.stderr.strip()
+        message = str(exc)
+        if detail:
+            message = f"{message} Nmap stderr: {detail[:1000]}"
+        failed = _failure(target, scan_type, message, status="failed")
+        failed.update(scan_started=started, nmap_xml=xml_text or None)
+        return failed
 
-    except nmap.PortScannerError as e:
-        console.print(
-            f"[red]Nmap error:[/red] {e}"
-        )
-        return None
-
-    except Exception as e:
-        console.print(
-            f"[red]Scan failed:[/red] {e}"
-        )
-        return None
-
-    if target_ip not in nm.all_hosts():
-        console.print(
-            "[red]No scan results found.[/red]"
-        )
-        return None
-
-    host = nm[target_ip]
-
-    host_state = host.get(
-        "status",
-        {}
-    ).get(
-        "state",
-        "unknown"
+    result.update(
+        target=target,
+        scope=target,
+        scan_type=scan_type,
+        scan_started=result.get("scan_started") or started,
+        scan_finished=result.get("scan_finished") or datetime.now(timezone.utc).isoformat(),
+        nmap_xml=xml_text,
+        nmap_exit_code=process.returncode,
+        nmap_stderr=(process.stderr or "")[:5000],
+        scan_arguments=arguments,
+        authorization_attested=True,
+        multiple_hosts_confirmed=count > 1 and confirm_multiple_hosts,
+        errors=list(result.get("errors", [])),
     )
-
-    services = []
-
-    for protocol in host.all_protocols():
-
-        ports = host[protocol].keys()
-
-        for port in sorted(ports):
-
-            service = host[protocol][port]
-
-            state = service.get(
-                "state",
-                ""
-            )
-
-            # Closed ports are not useful to the
-            # vulnerability engine.
-            if state == "closed":
-                continue
-
-            parsed = parse_service(
-                port,
-                protocol,
-                service,
-            )
-
-            services.append(parsed)
-
-    # OS information only exists when -O was used.
-    os_results = parse_os(host)
-
-    tcp_services = sum(
-        1
-        for service in services
-        if service["protocol"] == "tcp"
+    if process.returncode:
+        stderr = process.stderr.strip()
+        detail = stderr[:1000] if stderr else f"Nmap exited with status {process.returncode}."
+        result["errors"].append(detail)
+        result["status"] = "partial" if result["hosts"] else "failed"
+    result = _add_summary(result)
+    logger.info(
+        "Nmap scan ended with status %s; %d hosts and %d port records",
+        result["status"],
+        len(result["hosts"]),
+        len(result["services"]),
     )
-
-    udp_services = sum(
-        1
-        for service in services
-        if service["protocol"] == "udp"
-    )
-
-    result = {
-        "target": target_ip,
-
-        "scan_type": scan_type,
-
-        "status": "completed",
-
-        "host_state": host_state,
-
-        "os": os_results,
-
-        "summary": {
-            "total_services": len(services),
-            "tcp_services": tcp_services,
-            "udp_services": udp_services,
-        },
-
-        "services": services,
-    }
-
-    console.print()
-
-    console.print(
-        f"[green]Scan completed.[/green] "
-        f"Open/filtered services discovered: "
-        f"[bold]{len(services)}[/bold]"
-    )
-
     return result
 
 
-# ============================================================
-# DISPLAY RESULTS
-# ============================================================
+def _add_summary(result: dict[str, Any]) -> dict[str, Any]:
+    services = result.get("services", [])
+    result["summary"] = {
+        "total_services": len(services),
+        "confirmed_open": sum(service.get("state") == "open" for service in services),
+        "filtered_or_uncertain": sum(
+            service.get("state") in {"filtered", "open|filtered", "closed|filtered"}
+            for service in services
+        ),
+        "tcp_services": sum(service.get("protocol") == "tcp" for service in services),
+        "udp_services": sum(service.get("protocol") == "udp" for service in services),
+    }
+    return result
 
-def display_scan_table(services):
 
-    if not services:
-        console.print(
-            "[yellow]No services discovered.[/yellow]"
-        )
-        return
-
-    table = Table(
-        title="Discovered Services",
-        show_lines=True,
-    )
-
-    table.add_column(
-        "Port",
-        style="cyan",
-    )
-
-    table.add_column(
-        "Proto",
-        style="magenta",
-    )
-
-    table.add_column(
-        "State",
-        style="green",
-    )
-
-    table.add_column(
-        "Service",
-    )
-
-    table.add_column(
-        "Product",
-    )
-
-    table.add_column(
-        "Version",
-    )
-
-    table.add_column(
-        "Version Status",
-    )
-
-    table.add_column(
-        "CPE",
-    )
-
+def display_scan_table(services: list[dict[str, Any]]) -> None:
+    """Print a compact service summary without requiring Rich."""
     for service in services:
-
-        cpe = (
-            ", ".join(service["cpe"])
-            if service["cpe"]
-            else "-"
+        print(
+            f"{service.get('host', ''):>39} "
+            f"{service.get('port', '?')}/{service.get('protocol', '?'):<4} "
+            f"{service.get('state', 'unknown'):<14} "
+            f"{service.get('service', '')} {service.get('product', '')} "
+            f"{service.get('version', '')}".strip()
         )
 
-        table.add_row(
-            str(service["port"]),
-            service["protocol"],
-            service["state"],
-            service["service"] or "-",
-            service["product"] or "-",
-            service["version"] or "-",
-            service["version_status"],
-            cpe,
-        )
 
-    console.print(table)
-
-
-# ============================================================
-# SCAN PROFILE MENU
-# ============================================================
-
-def show_scan_profiles():
-
-    console.print()
-
-    console.print(
-        Panel(
-            "[bold cyan]Select Scan Profile[/bold cyan]",
-            border_style="cyan",
-        )
-    )
-
-    for number, profile in SCAN_PROFILES.items():
-
-        recommended = ""
-
-        if number == "2":
-            recommended = " [bold green]★ Recommended[/bold green]"
-
-        console.print(
-            f"\n[bold yellow]{number}. "
-            f"{profile['name']}[/bold yellow]"
-            f"{recommended}"
-        )
-
-        console.print(
-            f"   Description: "
-            f"{profile['description']}"
-        )
-
-        console.print(
-            f"   [bold cyan]When to use:[/bold cyan] "
-            f"{profile['when_to_use']}"
-        )
-
-    console.print()
-
-
-# ============================================================
-# MAIN CLI
-# ============================================================
-
-if __name__ == "__main__":
-
-    console.print(
-        Panel(
-            "[bold cyan]AI-VulnScan[/bold cyan]\n"
-            "Network Vulnerability Scanner",
-            border_style="cyan",
-        )
-    )
-
-    # --------------------------------------------------------
-    # Target
-    # --------------------------------------------------------
-
-    target = Prompt.ask(
-        "\n[bold]Enter target IP/hostname[/bold]"
-    )
-
-    # --------------------------------------------------------
-    # Scan profile
-    # --------------------------------------------------------
-
-    show_scan_profiles()
-
-    choice = Prompt.ask(
-        "Select scan profile",
-        choices=list(SCAN_PROFILES.keys()),
-        default="2",
-    )
-
-    selected_profile = SCAN_PROFILES[choice]
-
-    scan_type = selected_profile["scan_type"]
-
-    # --------------------------------------------------------
-    # Advanced options
-    # --------------------------------------------------------
-
-    console.print()
-
-    console.print(
-        Panel(
-            "[bold]Advanced Options[/bold]\n"
-            "Press ENTER to use the default configuration.",
-            border_style="blue",
-        )
-    )
-
-    tcp_input = Prompt.ask(
-        "Custom TCP ports "
-        "(example: 22,80,443)",
-        default="",
-    )
-
-    udp_input = ""
-
-    if scan_type in ["deep", "udp", "full"]:
-        udp_input = Prompt.ask(
-            "Custom UDP ports "
-            "(example: 53,123,161)",
-            default="",
-        )
-
-    custom_tcp_ports = None
-    custom_udp_ports = None
-
-    if tcp_input.strip():
-
-        try:
-            custom_tcp_ports = [
-                int(port.strip())
-                for port in tcp_input.split(",")
-                if port.strip()
-            ]
-
-        except ValueError:
-            console.print(
-                "[red]Invalid TCP port list.[/red]"
-            )
-            raise SystemExit(1)
-
-    if udp_input.strip():
-
-        try:
-            custom_udp_ports = [
-                int(port.strip())
-                for port in udp_input.split(",")
-                if port.strip()
-            ]
-
-        except ValueError:
-            console.print(
-                "[red]Invalid UDP port list.[/red]"
-            )
-            raise SystemExit(1)
-
-    # --------------------------------------------------------
-    # Show selected configuration
-    # --------------------------------------------------------
-
-    console.print()
-
-    console.print(
-        Panel(
-            f"[bold]Selected Scan[/bold]\n\n"
-            f"Profile: {selected_profile['name']}\n"
-            f"When to use: {selected_profile['when_to_use']}\n"
-            f"Target: {target}",
-            title="Scan Configuration",
-            border_style="green",
-        )
-    )
-
-    # --------------------------------------------------------
-    # Run scan
-    # --------------------------------------------------------
-
-    result = scan_target(
-        target_ip=target,
-        scan_type=scan_type,
-        custom_tcp_ports=custom_tcp_ports,
-        custom_udp_ports=custom_udp_ports,
-    )
-
-    if result is None:
-        raise SystemExit(1)
-
-    # --------------------------------------------------------
-    # Display results
-    # --------------------------------------------------------
-
-    display_scan_table(
-        result["services"]
-    )
-
-    # --------------------------------------------------------
-    # Summary
-    # --------------------------------------------------------
-
-    console.print()
-
-    summary = result["summary"]
-
-    console.print(
-        Panel(
-            f"[bold]Target:[/bold] {result['target']}\n"
-            f"[bold]Host State:[/bold] {result['host_state']}\n"
-            f"[bold]Total Services:[/bold] "
-            f"{summary['total_services']}\n"
-            f"[bold]TCP Services:[/bold] "
-            f"{summary['tcp_services']}\n"
-            f"[bold]UDP Services:[/bold] "
-            f"{summary['udp_services']}",
-            title="Scan Summary",
-            border_style="green",
-        )
-    )
+def show_scan_profiles() -> None:
+    """Display available scan profiles."""
+    for key, profile in SCAN_PROFILES.items():
+        if key == "full":
+            continue
+        print(f"{key}: {profile['name']} — {profile['description']}")

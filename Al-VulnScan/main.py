@@ -1,503 +1,285 @@
-"""
-AI-VulnScan
------------
-AI-powered network vulnerability scanner using:
-- Nmap for network scanning
-- NVD for CVE candidate lookup
-- Ollama for AI-assisted analysis
-- Markdown for reporting
-"""
+"""Interactive CLI for authorized AI-VulnScan assessments."""
 
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-import pyfiglet
-from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
+from config import REPORT_OUTPUT_DIR
+from pipeline import analyze_scan_result
+from report_generator import generate_reports
+from scan_comparator import compare_scans, format_comparison_report
+from scan_storage import ScanStorage
+from scanner import SCAN_PROFILES, scan_target, target_host_count, validate_ports, validate_target
 
-from scanner import scan_target
-from cve_lookup import search_cves
-from ai_analyzer import analyze_with_llm
-from report_generator import append_report_md
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+except ImportError:
+    Console = None
+    Panel = None
 
-
-# --------------------------------------------------
-# CONFIGURATION
-# --------------------------------------------------
-
-console = Console()
-
-REPORT_FILE = Path(__file__).resolve().parent / "report.md"
-
-
-# --------------------------------------------------
-# BANNER
-# --------------------------------------------------
-
-def print_banner():
-    """Display the application banner."""
-
-    ascii_banner = pyfiglet.figlet_format("AI-VulnScan")
-    console.print(f"[bold blue]{ascii_banner}[/bold blue]")
-
-    banner_text = Text()
-    banner_text.append(
-        "AI-Powered Network Vulnerability Scanner\n",
-        style="bold magenta",
-    )
-    banner_text.append(
-        "Nmap + NVD CVE Lookup + Local AI (Ollama)\n"
-    )
-    banner_text.append(
-        "Created by Rajkumar Kumawat\n"
-    )
-
-    console.print(
-        Panel(
-            banner_text,
-            expand=False,
-            border_style="green",
-        )
-    )
+logger = logging.getLogger(__name__)
+console = Console() if Console else None
+DEFAULT_TARGET = "127.0.0.1"
 
 
-# --------------------------------------------------
-# REPORT INITIALIZATION
-# --------------------------------------------------
-
-def initialize_report(target_ip):
-    """Create a new Markdown report."""
-
-    try:
-        with REPORT_FILE.open(
-            "w",
-            encoding="utf-8",
-        ) as report:
-
-            report.write(
-                "# AI-VulnScan Network Vulnerability Report\n\n"
-            )
-            report.write(
-                f"**Target:** `{target_ip}`\n\n"
-            )
-            report.write(
-                "**Important:** CVE keyword-search results are "
-                "candidates and do not independently confirm "
-                "that a vulnerability affects the target.\n\n"
-            )
-            report.write("---\n\n")
-
-    except OSError as exc:
-        console.print(
-            f"[bold red]Could not initialize report: {exc}[/bold red]"
-        )
-        return False
-
-    return True
-
-
-# --------------------------------------------------
-# TARGET INPUT
-# --------------------------------------------------
-
-def get_target():
-    """Read and validate the target input."""
-
-    target = console.input(
-        "[bold yellow]Enter target IP address: [/bold yellow]"
-    ).strip()
-
-    if not target:
-        console.print(
-            "[bold red]Target IP address cannot be empty.[/bold red]"
-        )
-        return None
-
-    return target
-
-
-# --------------------------------------------------
-# CUSTOM PORT INPUT
-# --------------------------------------------------
-
-def get_custom_ports():
-    """
-    Read optional TCP ports.
-
-    Returns:
-        None: use the selected scan profile's default ports.
-        list[int]: scan the specified TCP ports.
-    """
-
-    choice = console.input(
-        "[bold cyan]Specify custom TCP ports? (y/n): [/bold cyan]"
-    ).strip().lower()
-
-    if choice not in ("y", "yes"):
-        return None
-
-    ports_input = console.input(
-        "[bold cyan]Enter TCP ports separated by commas "
-        "(example: 22,80,443): [/bold cyan]"
-    ).strip()
-
-    if not ports_input:
-        console.print(
-            "[yellow]No custom ports entered. "
-            "Using the selected scan profile.[/yellow]"
-        )
-        return None
-
-    try:
-        ports = sorted(
-            {
-                int(item.strip())
-                for item in ports_input.split(",")
-            }
-        )
-
-    except ValueError:
-        console.print(
-            "[bold red]Invalid port input. "
-            "Use comma-separated numbers.[/bold red]"
-        )
-        return None
-
-    if any(port < 1 or port > 65535 for port in ports):
-        console.print(
-            "[bold red]Ports must be between 1 and 65535.[/bold red]"
-        )
-        return None
-
-    return ports
-
-
-# --------------------------------------------------
-# SCAN RESULT NORMALIZATION
-# --------------------------------------------------
-
-def extract_services(scan_result):
-    """
-    Extract service dictionaries from scan_target().
-
-    Supports:
-        1. A structured dictionary containing a 'services' list.
-        2. A direct list of service dictionaries.
-
-    Returns:
-        list[dict] or None if the structure is invalid.
-    """
-
-    if scan_result is None:
-        console.print(
-            "[bold red]The scanner returned no results.[/bold red]"
-        )
-        return None
-
-    if isinstance(scan_result, dict):
-        services = scan_result.get("services")
-
-        if services is None:
-            console.print(
-                "[bold red]The scan result does not contain "
-                "a 'services' field.[/bold red]"
-            )
-            console.print(
-                f"[yellow]Available fields: "
-                f"{list(scan_result.keys())}[/yellow]"
-            )
-            return None
-
-    elif isinstance(scan_result, list):
-        services = scan_result
-
+def _print(message: str, *, style: str | None = None) -> None:
+    if console:
+        console.print(message, style=style)
     else:
-        console.print(
-            "[bold red]Unexpected scan result type: "
-            f"{type(scan_result).__name__}[/bold red]"
-        )
-        return None
-
-    if not isinstance(services, list):
-        console.print(
-            "[bold red]The scanner's services field is not a list.[/bold red]"
-        )
-        return None
-
-    valid_services = []
-
-    for item in services:
-        if not isinstance(item, dict):
-            console.print(
-                "[yellow]Skipping unexpected service entry: "
-                f"{item!r}[/yellow]"
-            )
-            continue
-
-        valid_services.append(item)
-
-    return valid_services
+        print(message)
 
 
-# --------------------------------------------------
-# CVE LOOKUP
-# --------------------------------------------------
-
-def lookup_cves(product, version):
-    """
-    Retrieve potential CVE matches.
-
-    Keyword-search results must not be treated as confirmed
-    vulnerabilities without affected-version verification.
-    """
-
-    if not product or product.strip().lower() in (
-        "unknown",
-        "unknown service",
-    ):
-        console.print(
-            "[yellow]Skipping CVE lookup because "
-            "product information is unavailable.[/yellow]"
-        )
-        return []
-
-    try:
-        cves = search_cves(
-            product.strip(),
-            (version or "").strip(),
-        )
-
-        if cves is None:
-            return []
-
-        # The expected API returns a list of CVE IDs.
-        if isinstance(cves, list):
-            return cves
-
-        console.print(
-            "[yellow]Unexpected CVE lookup result type: "
-            f"{type(cves).__name__}[/yellow]"
-        )
-        return []
-
-    except Exception as exc:
-        console.print(
-            f"[bold red]CVE lookup failed: {exc}[/bold red]"
-        )
-        return []
-
-
-# --------------------------------------------------
-# AI ANALYSIS
-# --------------------------------------------------
-
-def run_ai_analysis(port, product, version, cves):
-    """Run local AI analysis for one discovered service."""
-
-    service_name = f"{product} {version}".strip()
-
-    try:
-        return analyze_with_llm(
-            port,
-            service_name,
-            cves,
-        )
-
-    except Exception as exc:
-        console.print(
-            f"[bold red]AI analysis failed: {exc}[/bold red]"
-        )
-
-        return (
-            "AI analysis could not be completed. "
-            "Review the Nmap evidence and CVE candidates manually."
-        )
-
-
-# --------------------------------------------------
-# PROCESS ONE SERVICE
-# --------------------------------------------------
-
-def process_service(service):
-    """Perform CVE lookup, AI analysis, and report generation."""
-
-    port = service.get("port", "Unknown")
-    protocol = service.get("protocol", "tcp")
-    state = service.get("state", "unknown")
-
-    product = (
-        service.get("product")
-        or service.get("service")
-        or "Unknown"
-    )
-
-    version = service.get("version") or ""
-
-    console.print(
-        f"\n[bold cyan]Port {port}/{protocol}[/bold cyan]"
-    )
-    console.print(f"State: {state}")
-    console.print(f"Product: {product}")
-    console.print(
-        f"Version: {version if version else 'Not identified'}"
-    )
-
-    # Do not perform vulnerability matching on ports that
-    # Nmap has not confirmed as open.
-    if state != "open":
-        console.print(
-            "[yellow]Skipping CVE lookup because this port "
-            "is not confirmed open.[/yellow]"
-        )
-        cves = []
-
+def print_banner() -> None:
+    """Display a simple banner without making Rich mandatory."""
+    title = "AI-VulnScan — Authorized Network Inventory"
+    if console and Panel:
+        console.print(Panel(title, subtitle="Nmap · NVD · local Ollama"))
     else:
-        console.print(
-            "[cyan]Searching NVD for potential CVE candidates...[/cyan]"
-        )
-        cves = lookup_cves(product, version)
+        print(f"\n{title}\nNmap | NVD | local Ollama\n")
 
-    if cves:
-        console.print(
-            "[yellow]Potential CVE candidates: "
-            f"{', '.join(str(cve) for cve in cves)}[/yellow]"
-        )
+
+def _ask(prompt: str, default: str = "") -> str:
+    if console:
+        suffix = f" [{default}]" if default else ""
+        value = console.input(f"{prompt}{suffix}: ")
     else:
-        console.print(
-            "[dim]No CVE candidates returned.[/dim]"
-        )
-
-    console.print(
-        "[cyan]Sending service information to local AI...[/cyan]"
-    )
-
-    ai_text = run_ai_analysis(
-        port,
-        product,
-        version,
-        cves,
-    )
-
-    console.print(
-        "[bold magenta]AI Analysis:[/bold magenta]"
-    )
-    console.print(str(ai_text))
-
-    try:
-        append_report_md(
-            service,
-            cves,
-            ai_text,
-        )
-
-        console.print(
-            f"[green]Report updated for port {port}.[/green]"
-        )
-
-    except Exception as exc:
-        console.print(
-            f"[bold red]Could not append service report: {exc}[/bold red]"
-        )
+        suffix = f" [{default}]" if default else ""
+        value = input(f"{prompt}{suffix}: ")
+    return value.strip() or default
 
 
-# --------------------------------------------------
-# MAIN
-# --------------------------------------------------
+def _confirm(prompt: str, required_text: str = "YES") -> bool:
+    return _ask(f"{prompt} Type {required_text} to continue").strip() == required_text
 
-def main():
-    """Run the AI-VulnScan application."""
 
-    print_banner()
-
-    target_ip = get_target()
-
-    if not target_ip:
-        return
-
-    custom_ports = get_custom_ports()
-
-    if not initialize_report(target_ip):
-        return
-
-    console.print(
-        f"\n[bold yellow]Starting scan of "
-        f"{target_ip}...[/bold yellow]\n"
-    )
-
-    try:
-        scan_result = scan_target(
-            target_ip=target_ip,
-            scan_type="standard",
-            custom_tcp_ports=custom_ports,
-        )
-
-    except KeyboardInterrupt:
-        console.print(
-            "\n[bold yellow]Scan interrupted by user.[/bold yellow]"
-        )
-        return
-
-    except Exception as exc:
-        console.print(
-            f"[bold red]Scanner failed: {exc}[/bold red]"
-        )
-        return
-
-    if scan_result is None:
-        console.print(
-            "[bold red]Scan failed. Check the Nmap output "
-            "and scan permissions.[/bold red]"
-        )
-        return
-
-    services = extract_services(scan_result)
-
-    if services is None:
-        console.print(
-            "[bold red]Could not process the scanner's result. "
-            "Check scanner.py's return structure.[/bold red]"
-        )
-        return
-
-    console.print(
-        f"\n[bold green]Scan finished. "
-        f"Processing {len(services)} services...[/bold green]"
-    )
-
-    if not services:
-        console.print(
-            "[yellow]No services were returned by the scanner.[/yellow]"
-        )
-        return
-
+def print_scan_summary(result: dict[str, Any]) -> None:
+    """Display observed states and candidates without asserting vulnerability."""
+    services = result.get("services", [])
+    _print(f"\nScan status: {result.get('status', 'unknown')}")
+    _print(f"Hosts: {len(result.get('hosts', []))}; port records: {len(services)}")
     for service in services:
-        try:
-            process_service(service)
+        _print(
+            f"  {service.get('host')}:{service.get('port')}/{service.get('protocol')} "
+            f"{service.get('state')} {service.get('service', '')} "
+            f"{service.get('product', '')} {service.get('version', '')}"
+        )
+    candidates = [
+        cve
+        for service in services
+        for cve in service.get("cve_candidates", [])
+    ]
+    _print(f"NVD CVE candidates: {len(candidates)}")
+    for cve in candidates[:20]:
+        _print(f"  {cve.get('id')} [{cve.get('match_status', 'candidate')}]")
+    for assessment in result.get("risk_assessments", []):
+        risk = assessment.get("risk", {})
+        _print(
+            f"Risk: {assessment.get('name')} — "
+            f"{risk.get('score', 0)}/100 ({risk.get('category', 'Informational')})"
+        )
+    ai = result.get("ai_analysis", {})
+    _print(f"AI analysis: {ai.get('status', 'not run')}")
 
-        except KeyboardInterrupt:
-            console.print(
-                "\n[bold yellow]Processing interrupted by user.[/bold yellow]"
-            )
-            break
 
-        except Exception as exc:
-            console.print(
-                f"[bold red]Error processing service: {exc}[/bold red]"
-            )
-            continue
+def run_comparison(storage: ScanStorage) -> None:
+    """Compare two explicitly selected saved scans and write a report."""
+    history = storage.list_scans()
+    if len(history) < 2:
+        _print("At least two saved scans are required for comparison.")
+        return
+    for index, item in enumerate(history, start=1):
+        _print(
+            f"{index}. {item.get('scan_id')} | {item.get('target')} | "
+            f"{item.get('created_at')} | {item.get('status')}"
+        )
+    try:
+        first = int(_ask("Older scan number"))
+        second = int(_ask("Newer scan number"))
+        if first == second or not (1 <= first <= len(history) and 1 <= second <= len(history)):
+            raise ValueError("Choose two different scan numbers from the list.")
+        older = storage.load_scan(history[first - 1]["scan_id"])
+        newer = storage.load_scan(history[second - 1]["scan_id"])
+        comparison = compare_scans(older, newer)
+        report = format_comparison_report(comparison)
+        directory = REPORT_OUTPUT_DIR / "comparisons"
+        directory.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        path = directory / f"comparison-{stamp}.md"
+        with path.open("x", encoding="utf-8") as handle:
+            handle.write(report)
+        _print(f"Comparison report: {path}")
+    except (ValueError, IndexError, KeyError, OSError) as exc:
+        logger.exception("Could not compare saved scans.")
+        _print(f"Comparison failed: {exc}")
 
-    console.print(
-        "\n[bold green]Scan processing finished.[/bold green]"
+
+def run_scan() -> None:
+    """Collect target/profile scope, confirm authorization, and run pipeline."""
+    target_input = _ask("Target IP, hostname, or strict CIDR", DEFAULT_TARGET)
+    try:
+        target = validate_target(target_input)
+        hosts_count = target_host_count(target)
+    except ValueError as exc:
+        _print(f"Invalid target: {exc}")
+        return
+
+    _print("Available scan profiles:")
+    profile_keys = (
+        "quick",
+        "standard",
+        "deep",
+        "aggressive",
+        "all_tcp_udp",
+        "udp",
+        "comprehensive",
     )
-    console.print(
-        f"[bold cyan]Report location: {REPORT_FILE}[/bold cyan]"
+    for index, key in enumerate(profile_keys, start=1):
+        profile = SCAN_PROFILES[key]
+        _print(f"  {index}. {profile['name']} — {profile['description']}")
+    profile_choice = _ask(f"Select profile (1-{len(profile_keys)})", "2")
+    if not profile_choice.isdigit() or not 1 <= int(profile_choice) <= len(profile_keys):
+        _print("Invalid scan profile selection.")
+        return
+    profile = profile_keys[int(profile_choice) - 1]
+
+    try:
+        tcp_text = _ask("Custom TCP ports (comma-separated; blank uses profile defaults)")
+        udp_text = _ask("Custom UDP ports (comma-separated; blank uses profile defaults)")
+        tcp_ports = validate_ports(tcp_text or None)
+        udp_ports = validate_ports(udp_text or None)
+    except ValueError as exc:
+        _print(f"Invalid ports: {exc}")
+        return
+
+    if profile in {"aggressive", "all_tcp_udp"} and (
+        tcp_ports is not None or udp_ports is not None
+    ):
+        _print(
+            f"The {SCAN_PROFILES[profile]['name']} profile scans all of its ports "
+            "and cannot be combined with custom ports. Choose another profile "
+            "for a custom-port scan."
+        )
+        return
+
+    _print(
+        f"\nScope to scan: {target}\n"
+        f"Address count: {hosts_count}\n"
+        f"Profile: {SCAN_PROFILES[profile]['name']}\n"
+        f"Custom TCP ports: {tcp_ports or 'none'}\n"
+        f"Custom UDP ports: {udp_ports or 'none'}\n"
+        "When custom ports are supplied, only those selected protocol/port sets are scanned.\n"
+        "UDP open|filtered states will not be treated as confirmed open."
     )
+    if not _confirm("Confirm you are authorized to assess this exact scope"):
+        _print("Scan cancelled; no network traffic was sent.")
+        return
+    if hosts_count > 1 and not _confirm(
+        f"Confirm scanning all {hosts_count} addresses in this CIDR",
+        f"SCAN {hosts_count} HOSTS",
+    ):
+        _print("Multi-host scan cancelled; no network traffic was sent.")
+        return
+    if profile == "comprehensive" and not _confirm(
+        "This broader scan can take longer. Confirm explicitly",
+        "COMPREHENSIVE",
+    ):
+        _print("Comprehensive scan cancelled; no network traffic was sent.")
+        return
+    if profile == "aggressive" and not _confirm(
+        "This scans all TCP ports with stronger version probes and may take much longer. "
+        "NSE scripts are not enabled. Confirm explicitly",
+        "AGGRESSIVE",
+    ):
+        _print("Aggressive scan cancelled; no network traffic was sent.")
+        return
+    if profile == "all_tcp_udp" and not _confirm(
+        "This probes every TCP and UDP port with stronger version detection. "
+        "It may take a very long time; UDP open|filtered is not confirmed open. "
+        "NSE scripts are not enabled. Confirm explicitly",
+        "ALL TCP+UDP",
+    ):
+        _print("All TCP and UDP scan cancelled; no network traffic was sent.")
+        return
+    enable_http = _confirm(
+        "Enable one low-impact HTTP GET for confirmed HTTP services? This may create normal server-side activity",
+        "HTTP",
+    )
+
+    _print("Starting Nmap scan. Do not run the application as root by default.")
+    try:
+        scanned = scan_target(
+            target,
+            scan_type=profile,
+            custom_tcp_ports=tcp_ports,
+            custom_udp_ports=udp_ports,
+            authorized=True,
+            confirm_multiple_hosts=hosts_count > 1,
+            confirm_aggressive=profile == "aggressive",
+            confirm_all_ports=profile == "all_tcp_udp",
+        )
+    except (ValueError, PermissionError) as exc:
+        _print(f"Scan was not started: {exc}")
+        return
+    except KeyboardInterrupt:
+        _print("Scan interrupted.")
+        return
+    except Exception as exc:
+        logger.exception("Unexpected scan failure.")
+        _print(f"Scan failed: {exc}")
+        return
+
+    _print("Processing Nmap evidence, rules, and CVE candidates...")
+    result = analyze_scan_result(
+        scanned,
+        enable_http_probe=enable_http,
+        include_ai=True,
+    )
+    print_scan_summary(result)
+
+    storage = ScanStorage()
+    xml_text = result.pop("nmap_xml", None)
+    try:
+        saved = storage.save_scan(result, nmap_xml=xml_text)
+        result["scan_id"] = saved["scan_id"]
+        paths = generate_reports(result, scan_id=saved["scan_id"])
+        storage.update_scan(
+            saved["scan_id"],
+            {
+                "report_locations": paths,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        logger.exception("Scan storage or report generation failed.")
+        _print(f"Could not persist the complete scan/report set: {exc}")
+        return
+
+    _print(f"Scan ID: {saved['scan_id']}")
+    for format_name, path in paths.items():
+        _print(f"{format_name.upper()} report: {Path(path)}")
+    if result.get("errors"):
+        _print(f"Partial results contain {len(result['errors'])} recorded error(s).")
+
+
+def main() -> None:
+    """Run a new authorized scan or compare saved scan history."""
+    print_banner()
+    storage = ScanStorage()
+    action = _ask("Choose: 1) new scan  2) compare scan history", "1")
+    if action == "2":
+        run_comparison(storage)
+    elif action == "1":
+        run_scan()
+    else:
+        _print("Choose 1 or 2.")
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        console.print(
-            "\n[bold yellow]Application stopped by user.[/bold yellow]"
-        )
+        _print("Application stopped by user.")

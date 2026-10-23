@@ -256,6 +256,7 @@ def evaluate_detection_confidence(service: dict) -> dict:
             ),
         }
 
+    scale = clean_string(service.get("detection_confidence_scale")).lower()
     try:
         confidence = float(raw_confidence)
     except (TypeError, ValueError):
@@ -268,9 +269,26 @@ def evaluate_detection_confidence(service: dict) -> dict:
             ),
         }
 
+    if scale == "nmap_1_to_10":
+        if not 1 <= confidence <= 10:
+            return {
+                "value": None,
+                "scale": scale,
+                "status": "unknown",
+                "explanation": "Nmap confidence was outside the expected 1-10 range.",
+            }
+        status = "high" if confidence >= 8 else "medium" if confidence >= 5 else "low"
+        return {
+            "value": confidence,
+            "scale": scale,
+            "status": status,
+            "explanation": f"Nmap reported service-detection confidence {confidence:g}/10.",
+        }
+
     if not 0 <= confidence <= 100:
         return {
             "value": None,
+            "scale": "0_to_100",
             "status": "unknown",
             "explanation": (
                 "Detection confidence was outside the expected "
@@ -287,6 +305,7 @@ def evaluate_detection_confidence(service: dict) -> dict:
 
     return {
         "value": confidence,
+        "scale": "0_to_100",
         "status": status,
         "explanation": (
             f"Nmap reported detection confidence of {confidence:g}%."

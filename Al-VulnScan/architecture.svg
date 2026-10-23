@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1640" viewBox="0 0 760 1640" role="img" aria-labelledby="title description">
+  <title id="title">AI-VulnScan architecture pipeline</title>
+  <desc id="description">Portrait pipeline for authorized network scanning, XML parsing, evidence-driven vulnerability triage, reporting, and scan history.</desc>
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M28 0H0V28" fill="none" stroke="#17406c" stroke-width="0.7" opacity="0.72"/>
+      <circle cx="0" cy="0" r="1.2" fill="#1d5688" opacity="0.8"/>
+    </pattern>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#ecf6ff"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#00dff4"/>
+    </marker>
+    <style>
+      .title { font: 700 22px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #f5f9ff; letter-spacing: 1px; }
+      .subtitle { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #afc4df; }
+      .label { font: 600 17px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #f5f9ff; }
+      .detail { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #b8cbe2; }
+      .stage { fill: #0a1d3a; stroke: #e6f2ff; stroke-width: 2; }
+      .stage-ai { fill: #062844; stroke: #00dff4; stroke-width: 2.5; }
+      .number { font: 700 13px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #eaf6ff; text-anchor: middle; dominant-baseline: central; }
+      .number-ai { fill: #00eaff; }
+      .arrow { stroke: #ecf6ff; stroke-width: 2.5; marker-end: url(#arrow); }
+      .arrow-ai { stroke: #00dff4; stroke-width: 2.8; marker-end: url(#arrowCyan); }
+    </style>
+  </defs>
+  <rect width="760" height="1640" fill="#06142c"/>
+  <rect width="760" height="1640" fill="url(#grid)"/>
+  <text x="380" y="27" class="title" text-anchor="middle">AI-VULNSCAN · EVIDENCE PIPELINE</text>
+  <text x="380" y="45" class="subtitle" text-anchor="middle">AUTHORIZED ASSESSMENTS ONLY · AI IS ADVISORY</text>
+
+  <g transform="translate(0,0)">
+    <rect x="98" y="62" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="101" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="101" class="number">01</text>
+    <text x="177" y="95" class="label">User Input</text>
+    <text x="177" y="118" class="detail">IP address · hostname · strict CIDR</text>
+  </g>
+  <line x1="380" y1="140" x2="380" y2="166" class="arrow"/>
+  <g>
+    <rect x="98" y="174" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="213" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="213" class="number">02</text>
+    <text x="177" y="207" class="label">Input Validation</text>
+    <text x="177" y="230" class="detail">CIDR · host count · ports · profile · confirmation</text>
+  </g>
+  <line x1="380" y1="252" x2="380" y2="279" class="arrow"/>
+  <g>
+    <rect x="98" y="287" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="326" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="326" class="number">03</text>
+    <text x="177" y="320" class="label">Nmap Scan Engine</text>
+    <text x="177" y="343" class="detail">argv subprocess · bounded timeout · no shell</text>
+  </g>
+  <line x1="380" y1="365" x2="380" y2="392" class="arrow"/>
+  <g>
+    <rect x="98" y="400" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="439" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="439" class="number">04</text>
+    <text x="177" y="433" class="label">Nmap XML Result Parser</text>
+    <text x="177" y="456" class="detail">hosts · port states · services · CPE · scripts · OS</text>
+  </g>
+  <line x1="380" y1="478" x2="380" y2="505" class="arrow"/>
+  <g>
+    <rect x="98" y="513" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="552" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="552" class="number">05</text>
+    <text x="177" y="546" class="label">Service Fingerprinting</text>
+    <text x="177" y="569" class="detail">preserve Nmap facts · optional HTTP GET</text>
+  </g>
+  <line x1="380" y1="591" x2="380" y2="618" class="arrow"/>
+  <g>
+    <rect x="98" y="626" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="665" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="665" class="number">06</text>
+    <text x="177" y="659" class="label">Vulnerability Rule Engine</text>
+    <text x="177" y="682" class="detail">deterministic · potential findings only</text>
+  </g>
+  <line x1="380" y1="704" x2="380" y2="731" class="arrow"/>
+  <g>
+    <rect x="98" y="739" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="778" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="778" class="number">07</text>
+    <text x="177" y="772" class="label">Evidence Engine</text>
+    <text x="177" y="795" class="detail">source · confidence · uncertainty · limitations</text>
+  </g>
+  <line x1="380" y1="817" x2="380" y2="844" class="arrow"/>
+  <g>
+    <rect x="98" y="852" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="891" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="891" class="number">08</text>
+    <text x="177" y="885" class="label">NVD CVE Lookup</text>
+    <text x="177" y="908" class="detail">candidate · product · CPE · version-range status</text>
+  </g>
+  <line x1="380" y1="930" x2="380" y2="957" class="arrow-ai"/>
+  <g>
+    <rect x="98" y="965" width="564" height="78" rx="2" class="stage-ai"/>
+    <circle cx="137" cy="1004" r="19" fill="none" stroke="#00dff4" stroke-width="1.8"/>
+    <text x="137" y="1004" class="number number-ai">09</text>
+    <text x="177" y="998" class="label" style="fill:#00eaff">AI Analyzer</text>
+    <text x="177" y="1021" class="detail" style="fill:#8befff">local Ollama · optional · advisory only</text>
+  </g>
+  <line x1="380" y1="1043" x2="380" y2="1070" class="arrow-ai"/>
+  <g>
+    <rect x="98" y="1078" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="1117" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="1117" class="number">10</text>
+    <text x="177" y="1111" class="label">Deterministic Risk Scoring</text>
+    <text x="177" y="1134" class="detail">0–100 · factors recorded · independent of AI</text>
+  </g>
+  <line x1="380" y1="1156" x2="380" y2="1183" class="arrow"/>
+  <g>
+    <rect x="98" y="1191" width="564" height="78" rx="2" class="stage-ai"/>
+    <circle cx="137" cy="1230" r="19" fill="none" stroke="#00dff4" stroke-width="1.8"/>
+    <text x="137" y="1230" class="number number-ai">11</text>
+    <text x="177" y="1224" class="label" style="fill:#00eaff">Explainable AI</text>
+    <text x="177" y="1247" class="detail" style="fill:#8befff">traceable facts · risk factors · AI separated</text>
+  </g>
+  <line x1="380" y1="1269" x2="380" y2="1296" class="arrow"/>
+  <g>
+    <rect x="98" y="1304" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="1343" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="1343" class="number">12</text>
+    <text x="177" y="1337" class="label">Recommendation Engine</text>
+    <text x="177" y="1360" class="detail">verification steps · impact · no execution</text>
+  </g>
+  <line x1="380" y1="1382" x2="380" y2="1409" class="arrow"/>
+  <g>
+    <rect x="98" y="1417" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="1456" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="1456" class="number">13</text>
+    <text x="177" y="1450" class="label">Report Generator</text>
+    <text x="177" y="1473" class="detail">Markdown · JSON · HTML</text>
+  </g>
+  <line x1="380" y1="1495" x2="380" y2="1522" class="arrow"/>
+  <g>
+    <rect x="98" y="1530" width="564" height="78" rx="2" class="stage"/>
+    <circle cx="137" cy="1569" r="19" fill="none" stroke="#edf6ff" stroke-width="1.6"/>
+    <text x="137" y="1569" class="number">14</text>
+    <text x="177" y="1563" class="label">Scan Storage &amp; Comparison</text>
+    <text x="177" y="1586" class="detail">atomic JSON history · cautious scan diffs</text>
+  </g>
+  <text x="380" y="1630" class="subtitle" text-anchor="middle">OBSERVATIONS ≠ CONFIRMED VULNERABILITIES</text>
+</svg>

@@ -160,8 +160,41 @@ def assess_initial_fingerprint(service):
     else:
         status = "unidentified"
 
+    raw_confidence = service.get(
+        "detection_confidence",
+        service.get("conf", service.get("confidence")),
+    )
+    confidence_scale = clean_string(
+        service.get("detection_confidence_scale")
+    ).lower()
+    try:
+        numeric_confidence = float(raw_confidence)
+        if confidence_scale == "nmap_1_to_10":
+            confidence = (
+                "high" if numeric_confidence >= 8
+                else "medium" if numeric_confidence >= 5
+                else "low"
+            ) if 1 <= numeric_confidence <= 10 else "unknown"
+        else:
+            confidence = (
+                "high" if numeric_confidence >= 90
+                else "medium" if numeric_confidence >= 60
+                else "low"
+            ) if 0 <= numeric_confidence <= 100 else "unknown"
+    except (TypeError, ValueError):
+        numeric_confidence = None
+        confidence = "unknown"
+
     return {
         "status": status,
+        "confidence": confidence,
+        "confidence_value": numeric_confidence,
+        "confidence_scale": confidence_scale or (
+            "0_to_100" if numeric_confidence is not None else "unknown"
+        ),
+        "confidence_source": (
+            "nmap_service_detection" if numeric_confidence is not None else "unknown"
+        ),
         "original_service": service_name,
         "original_product": product,
         "original_version": version,
@@ -196,7 +229,8 @@ def inspect_http_service(
 
     scheme = "https" if use_https else "http"
 
-    url = f"{scheme}://{target}:{port}/"
+    host_for_url = f"[{target}]" if ":" in target and not target.startswith("[") else target
+    url = f"{scheme}://{host_for_url}:{port}/"
 
     request = Request(
         url,
@@ -372,6 +406,18 @@ def inspect_http_service(
         "server_header": server_header,
         "powered_by": powered_by,
         "content_type": content_type,
+        "security_headers": {
+            name: clean_string(headers.get(name, ""))
+            for name in (
+                "Strict-Transport-Security",
+                "Content-Security-Policy",
+                "X-Content-Type-Options",
+                "X-Frame-Options",
+                "Referrer-Policy",
+                "Permissions-Policy",
+            )
+            if headers.get(name)
+        },
         "body_sample": body_text[:1000],
         "observations": observations,
         "product_candidates": unique_candidates,
@@ -570,6 +616,8 @@ def fingerprint_service(
 
     result["fingerprint"] = {
         "status": status,
+        "confidence": initial["confidence"],
+        "confidence_source": initial["confidence_source"],
         "initial_assessment": initial,
         "observations": observations,
         "product_candidates": candidates,
@@ -628,9 +676,10 @@ def fingerprint_scan(
     results = []
 
     for service in services:
+        service_target = clean_string(service.get("host") or target)
         results.append(
             fingerprint_service(
-                target=target,
+                target=service_target,
                 service=service,
                 enable_http_probe=enable_http_probe,
                 timeout=timeout,
