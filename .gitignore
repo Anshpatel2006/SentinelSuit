@@ -34,9 +34,41 @@ Thumbs.db
 
 # Environment and secrets
 .env
+.env.*
 .env.local
 .env.*.local
+!.env.example
+!**/.env.example
+!.env.*.example
+!**/.env.*.example
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs and reports
+dist/
+build/
+coverage/
+.next/
+out/
+.nuxt/
+.svelte-kit/
+*.tsbuildinfo
+vite.svg
+
+# Tooling caches
+.cache/
+.eslintcache
+.parcel-cache/
+.turbo/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
 
 # Large Archive Files & Backups
 *.zip
