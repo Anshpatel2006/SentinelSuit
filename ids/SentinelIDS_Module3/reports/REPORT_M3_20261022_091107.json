@@ -1,0 +1,1429 @@
+{
+  "report_id": "REPORT_M3_20261022_091107",
+  "generated_at": "2026-10-22T09:11:07.675078",
+  "module": "Module 3 - Network Intrusion Detection System",
+  "platform": "SentinelIDS",
+  "summary": {
+    "total_alerts": 32,
+    "severity_distribution": {
+      "LOW": 0,
+      "MEDIUM": 6,
+      "HIGH": 0,
+      "CRITICAL": 26
+    },
+    "top_attackers": [
+      {
+        "ip": "127.0.0.1",
+        "count": 32
+      }
+    ],
+    "active_alerts": 32,
+    "total_flows_monitored": 39
+  },
+  "alerts": [
+    {
+      "id": 32,
+      "timestamp": "2026-10-22T09:10:57.526934",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 57586,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 52.6,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 52.6/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 39,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 57586,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:48.437731",
+          "end_time": "2026-10-22T14:40:48.436823",
+          "packet_count": 4,
+          "byte_count": 306
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 306,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 31,
+      "timestamp": "2026-10-22T09:10:57.199500",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36206,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 26,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 38,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36206,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.328317",
+          "end_time": "2026-10-22T14:40:32.153949",
+          "packet_count": 2,
+          "byte_count": 148
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 2,
+          "bytes": 148,
+          "packets_per_sec": 20000.0,
+          "syn_flags": 2.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "timestamp": "2026-10-22T09:10:56.896942",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36200,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 25,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 37,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36200,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.327086",
+          "end_time": "2026-10-22T14:40:32.151373",
+          "packet_count": 4,
+          "byte_count": 296
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 296,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "timestamp": "2026-10-22T09:10:56.555746",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36186,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 24,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 36,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36186,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.303707",
+          "end_time": "2026-10-22T14:40:32.139706",
+          "packet_count": 19,
+          "byte_count": 1804
+        },
+        "selected_features": {
+          "duration": 0.001359,
+          "packets": 19,
+          "bytes": 1804,
+          "packets_per_sec": 13980.868285504048,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "timestamp": "2026-10-22T09:10:56.242942",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36176,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 23,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 35,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36176,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.268259",
+          "end_time": "2026-10-22T14:40:32.137001",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.003062,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 7838.014369693011,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "timestamp": "2026-10-22T09:10:55.924681",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36172,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 22,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 34,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36172,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.267217",
+          "end_time": "2026-10-22T14:40:32.138721",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.004859,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 4939.287919324965,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "timestamp": "2026-10-22T09:10:55.637294",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36158,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 21,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 33,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36158,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.212140",
+          "end_time": "2026-10-22T14:40:32.139596",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.011393,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 2106.55665759677,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "timestamp": "2026-10-22T09:10:55.318506",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36142,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 20,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 32,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36142,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.172192",
+          "end_time": "2026-10-22T14:40:32.135984",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.021522,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 1115.137998327293,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "timestamp": "2026-10-22T09:10:54.946334",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36128,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 19,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 31,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36128,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.155631",
+          "end_time": "2026-10-22T14:40:32.133243",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.025824,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 929.368029739777,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "timestamp": "2026-10-22T09:10:54.621118",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36118,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 18,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 30,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36118,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.153721",
+          "end_time": "2026-10-22T14:40:32.133212",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.026669,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 899.921256890022,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "timestamp": "2026-10-22T09:10:54.271896",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36116,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 17,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 29,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36116,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.138190",
+          "end_time": "2026-10-22T14:40:32.133158",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.028599,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 839.1901814748768,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "timestamp": "2026-10-22T09:10:53.939704",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36114,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 16,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 28,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36114,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.129594",
+          "end_time": "2026-10-22T14:40:32.134310",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.030084,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 797.7662544874352,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "timestamp": "2026-10-22T09:10:53.591479",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36108,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 15,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 27,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36108,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.126838",
+          "end_time": "2026-10-22T14:40:32.124086",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.022618,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 1061.101777345477,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "timestamp": "2026-10-22T09:10:53.253453",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36102,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 14,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 26,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36102,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.119247",
+          "end_time": "2026-10-22T14:40:32.123939",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.024045,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 998.1285090455395,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "timestamp": "2026-10-22T09:10:52.902968",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36090,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 13,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 25,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36090,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.092705",
+          "end_time": "2026-10-22T14:40:32.096460",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.006084,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 3944.7731755424065,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "timestamp": "2026-10-22T09:10:52.573879",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 36084,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 12,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 24,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 36084,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:32.090797",
+          "end_time": "2026-10-22T14:40:32.097573",
+          "packet_count": 24,
+          "byte_count": 2134
+        },
+        "selected_features": {
+          "duration": 0.007297,
+          "packets": 24,
+          "bytes": 2134,
+          "packets_per_sec": 3289.022886117583,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "timestamp": "2026-10-22T09:10:52.225731",
+      "severity": "CRITICAL",
+      "attack_type": "Port Scan / Reconnaissance",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 49115,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Port Scan / Reconnaissance | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000002 | SCAN TCP NULL Scan Detected (No Flags Set) | Class: attempted-recon",
+      "status": "NEW",
+      "nmap_scan_id": 11,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1046 - Network Service Discovery` (Tactic: Discovery)\n\n**Threat Description:** Attacker is probing open TCP/UDP ports to enumerate listening services and software versions.\n\n**Investigative Evidence:**\n- Alert Classification: Port Scan / Reconnaissance\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Pre-attack reconnaissance often preceding exploitation or targeted vulnerability probing.\n\n**Recommended Immediate Response Actions:**\n1. Block the scanning IP at the edge firewall.\n2. Verify exposed ports against approved network perimeter baseline.\n3. Ensure administrative services (SSH, RDP, DB) are restricted to VPN only.\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 23,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 49115,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:26.150925",
+          "end_time": "2026-10-22T14:40:26.150463",
+          "packet_count": 2,
+          "byte_count": 108
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 2,
+          "bytes": 108,
+          "packets_per_sec": 20000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": {
+          "sid": 1000002,
+          "msg": "SCAN TCP NULL Scan Detected (No Flags Set)",
+          "priority": 2,
+          "classtype": "attempted-recon",
+          "rule_raw": "alert tcp any any -> any any (msg:\"SCAN TCP NULL Scan Detected (No Flags Set)\"; flags:0; priority:2; classtype:attempted-recon; sid:1000002; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "timestamp": "2026-10-22T09:10:51.861300",
+      "severity": "CRITICAL",
+      "attack_type": "Port Scan / Reconnaissance",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 49113,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Port Scan / Reconnaissance | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000002 | SCAN TCP NULL Scan Detected (No Flags Set) | Class: attempted-recon",
+      "status": "NEW",
+      "nmap_scan_id": 10,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1046 - Network Service Discovery` (Tactic: Discovery)\n\n**Threat Description:** Attacker is probing open TCP/UDP ports to enumerate listening services and software versions.\n\n**Investigative Evidence:**\n- Alert Classification: Port Scan / Reconnaissance\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Pre-attack reconnaissance often preceding exploitation or targeted vulnerability probing.\n\n**Recommended Immediate Response Actions:**\n1. Block the scanning IP at the edge firewall.\n2. Verify exposed ports against approved network perimeter baseline.\n3. Ensure administrative services (SSH, RDP, DB) are restricted to VPN only.\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 22,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 49113,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:25.150431",
+          "end_time": "2026-10-22T14:40:25.149312",
+          "packet_count": 2,
+          "byte_count": 108
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 2,
+          "bytes": 108,
+          "packets_per_sec": 20000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": {
+          "sid": 1000002,
+          "msg": "SCAN TCP NULL Scan Detected (No Flags Set)",
+          "priority": 2,
+          "classtype": "attempted-recon",
+          "rule_raw": "alert tcp any any -> any any (msg:\"SCAN TCP NULL Scan Detected (No Flags Set)\"; flags:0; priority:2; classtype:attempted-recon; sid:1000002; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "timestamp": "2026-10-22T09:10:51.524949",
+      "severity": "CRITICAL",
+      "attack_type": "Port Scan / Reconnaissance",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 45886,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 99.6,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Port Scan / Reconnaissance | Severity: CRITICAL | Risk Score: 99.6/100 | Action: SCAN_AND_AI. Rule SID: 1000003 | SCAN TCP Xmas Tree Scan Detected (FPU Flags Set) | Class: attempted-recon",
+      "status": "NEW",
+      "nmap_scan_id": 9,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **99.6/100**.\n\n**MITRE ATT&CK Mapping:** `T1046 - Network Service Discovery` (Tactic: Discovery)\n\n**Threat Description:** Attacker is probing open TCP/UDP ports to enumerate listening services and software versions.\n\n**Investigative Evidence:**\n- Alert Classification: Port Scan / Reconnaissance\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Pre-attack reconnaissance often preceding exploitation or targeted vulnerability probing.\n\n**Recommended Immediate Response Actions:**\n1. Block the scanning IP at the edge firewall.\n2. Verify exposed ports against approved network perimeter baseline.\n3. Ensure administrative services (SSH, RDP, DB) are restricted to VPN only.\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 21,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 45886,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:19.662567",
+          "end_time": "2026-10-22T14:40:19.662133",
+          "packet_count": 2,
+          "byte_count": 108
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 2,
+          "bytes": 108,
+          "packets_per_sec": 20000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": {
+          "sid": 1000003,
+          "msg": "SCAN TCP Xmas Tree Scan Detected (FPU Flags Set)",
+          "priority": 2,
+          "classtype": "attempted-recon",
+          "rule_raw": "alert tcp any any -> any any (msg:\"SCAN TCP Xmas Tree Scan Detected (FPU Flags Set)\"; flags:FPU; priority:2; classtype:attempted-recon; sid:1000003; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "timestamp": "2026-10-22T09:10:51.170728",
+      "severity": "CRITICAL",
+      "attack_type": "Port Scan / Reconnaissance",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 45884,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 99.6,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Port Scan / Reconnaissance | Severity: CRITICAL | Risk Score: 99.6/100 | Action: SCAN_AND_AI. Rule SID: 1000003 | SCAN TCP Xmas Tree Scan Detected (FPU Flags Set) | Class: attempted-recon",
+      "status": "NEW",
+      "nmap_scan_id": 8,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **99.6/100**.\n\n**MITRE ATT&CK Mapping:** `T1046 - Network Service Discovery` (Tactic: Discovery)\n\n**Threat Description:** Attacker is probing open TCP/UDP ports to enumerate listening services and software versions.\n\n**Investigative Evidence:**\n- Alert Classification: Port Scan / Reconnaissance\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Pre-attack reconnaissance often preceding exploitation or targeted vulnerability probing.\n\n**Recommended Immediate Response Actions:**\n1. Block the scanning IP at the edge firewall.\n2. Verify exposed ports against approved network perimeter baseline.\n3. Ensure administrative services (SSH, RDP, DB) are restricted to VPN only.\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 20,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 45884,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:18.661697",
+          "end_time": "2026-10-22T14:40:18.661065",
+          "packet_count": 2,
+          "byte_count": 108
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 2,
+          "bytes": 108,
+          "packets_per_sec": 20000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": {
+          "sid": 1000003,
+          "msg": "SCAN TCP Xmas Tree Scan Detected (FPU Flags Set)",
+          "priority": 2,
+          "classtype": "attempted-recon",
+          "rule_raw": "alert tcp any any -> any any (msg:\"SCAN TCP Xmas Tree Scan Detected (FPU Flags Set)\"; flags:FPU; priority:2; classtype:attempted-recon; sid:1000003; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "timestamp": "2026-10-22T09:10:50.831531",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 39720,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 7,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 18,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 39720,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:10.025283",
+          "end_time": "2026-10-22T14:40:10.020989",
+          "packet_count": 6,
+          "byte_count": 340
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 6,
+          "bytes": 340,
+          "packets_per_sec": 60000.0,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "timestamp": "2026-10-22T09:10:50.491296",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 39720,
+      "dst_port": 443,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 6,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 443 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 17,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 39720,
+          "dst_port": 443,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:10.024031",
+          "end_time": "2026-10-22T14:40:10.020971",
+          "packet_count": 4,
+          "byte_count": 224
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 224,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 2.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "timestamp": "2026-10-22T09:10:50.172849",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 39720,
+      "dst_port": 80,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 5,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 80 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 16,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 39720,
+          "dst_port": 80,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:10.023028",
+          "end_time": "2026-10-22T14:40:10.020964",
+          "packet_count": 4,
+          "byte_count": 224
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 224,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 2.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "timestamp": "2026-10-22T09:10:49.841163",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 39720,
+      "dst_port": 22,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 4,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 22 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 15,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 39720,
+          "dst_port": 22,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:10.022341",
+          "end_time": "2026-10-22T14:40:10.020956",
+          "packet_count": 4,
+          "byte_count": 224
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 224,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 2.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "timestamp": "2026-10-22T09:10:49.501784",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 39720,
+      "dst_port": 21,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 3,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 21 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 14,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 39720,
+          "dst_port": 21,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:10.021549",
+          "end_time": "2026-10-22T14:40:10.020946",
+          "packet_count": 4,
+          "byte_count": 224
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 224,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 2.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "timestamp": "2026-10-22T09:10:49.141415",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 55308,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 2,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 13,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 55308,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:01.874615",
+          "end_time": "2026-10-22T14:40:01.877345",
+          "packet_count": 24,
+          "byte_count": 2212
+        },
+        "selected_features": {
+          "duration": 0.00454,
+          "packets": 24,
+          "bytes": 2212,
+          "packets_per_sec": 5286.343612334802,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "timestamp": "2026-10-22T09:10:48.688684",
+      "severity": "CRITICAL",
+      "attack_type": "Denial of Service (DoS)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 55298,
+      "dst_port": 8002,
+      "protocol": "TCP",
+      "risk_score": 100.0,
+      "response_action": "SCAN_AND_AI",
+      "details": "Attack: Denial of Service (DoS) | Severity: CRITICAL | Risk Score: 100.0/100 | Action: SCAN_AND_AI. Rule SID: 1000010 | DOS Potential TCP SYN Flood anomaly | Class: attempted-dos",
+      "status": "NEW",
+      "nmap_scan_id": 1,
+      "ai_summary": "### [AI Sentinel Incident Analysis Report]\n\n**Executive Verdict:** CRITICAL threat incident detected from `127.0.0.1` targeting `127.0.0.1`. Calculated Threat Risk Score: **100.0/100**.\n\n**MITRE ATT&CK Mapping:** `T1498 - Network Denial of Service` (Tactic: Impact)\n\n**Threat Description:** High-volume connection flood or protocol exploitation targeted at depleting host/network state buffers.\n\n**Investigative Evidence:**\n- Alert Classification: Denial of Service (DoS)\n- Destination Port: 8002 (TCP)\n- Response Action Taken: `SCAN_AND_AI`\n- Host Fingerprinting (Bounded Nmap): None detected or scan skipped.\n\n**Potential Business Impact:** Service degradation or complete unresponsiveness of web and API services.\n\n**Recommended Immediate Response Actions:**\n1. Deploy upstream rate-limiting or SYN cookies (sysctl -w net.ipv4.tcp_syncookies=1).\n2. Null-route or block the offending IP address in perimeter firewall.\n3. Activate DDoS mitigation proxy (Cloudflare/AWS Shield).\n",
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 12,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 55298,
+          "dst_port": 8002,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:09:56.453132",
+          "end_time": "2026-10-22T14:39:56.457126",
+          "packet_count": 24,
+          "byte_count": 2194
+        },
+        "selected_features": {
+          "duration": 0.004545,
+          "packets": 24,
+          "bytes": 2194,
+          "packets_per_sec": 5280.52805280528,
+          "syn_flags": 4.0
+        },
+        "rule_match": {
+          "sid": 1000010,
+          "msg": "DOS Potential TCP SYN Flood anomaly",
+          "priority": 1,
+          "classtype": "attempted-dos",
+          "rule_raw": "alert tcp any any -> any any (msg:\"DOS Potential TCP SYN Flood anomaly\"; flags:S; threshold:type threshold, track by_dst, count 50, seconds 5; priority:1; classtype:attempted-dos; sid:1000010; rev:1;)"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "timestamp": "2026-10-22T09:10:48.668637",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 54894,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 53.4,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 53.4/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 10,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 54894,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:09:43.450451",
+          "end_time": "2026-10-22T14:39:43.450155",
+          "packet_count": 6,
+          "byte_count": 396
+        },
+        "selected_features": {
+          "duration": 0.000328,
+          "packets": 6,
+          "bytes": 396,
+          "packets_per_sec": 18292.682926829268,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 4,
+      "timestamp": "2026-10-22T09:10:48.454853",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 57586,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 52.6,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 52.6/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 19,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 57586,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:10:18.231171",
+          "end_time": "2026-10-22T14:40:18.230091",
+          "packet_count": 4,
+          "byte_count": 306
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 306,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 3,
+      "timestamp": "2026-10-22T09:10:18.248631",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 57586,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 52.6,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 52.6/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 11,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 57586,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:09:48.020706",
+          "end_time": "2026-10-22T14:39:48.019952",
+          "packet_count": 4,
+          "byte_count": 306
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 306,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-10-22T09:08:23.034975",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 60686,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 52.6,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 52.6/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 6,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 60686,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:08:09.307886",
+          "end_time": "2026-10-22T14:38:09.307283",
+          "packet_count": 4,
+          "byte_count": 306
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 306,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 1,
+      "timestamp": "2026-10-22T09:08:23.019867",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 49452,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 53.4,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 53.4/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 5,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 49452,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:07:39.675588",
+          "end_time": "2026-10-22T14:37:39.676721",
+          "packet_count": 8,
+          "byte_count": 528
+        },
+        "selected_features": {
+          "duration": 0.002211,
+          "packets": 8,
+          "bytes": 528,
+          "packets_per_sec": 3618.272274988693,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    }
+  ]
+}

@@ -40,10 +40,10 @@ Open the URL printed by Vite, normally `http://localhost:5173`.
 
 ## Dataset requirement
 
-The FastAPI backend trains the Random Forest model when it starts scanning. Put the CSV used by the phishing notebook in:
+The FastAPI backend trains the Random Forest model when it starts scanning. The supplied training CSV is:
 
-`backend/phishing link detection dataset.csv`
+`backend/phishing link detection dataset - phishing link detection dataset.csv`
 
-The CSV must contain `ClassLabel` and either the 16 engineered feature columns or a `URL` column. In the notebook convention, `ClassLabel=0` means phishing and `ClassLabel=1` means legitimate.
+The CSV must contain `ClassLabel` and either a `URL` column or all 16 engineered feature columns. When URLs are present, the backend recomputes all model features with the same extractor used for live scans. In the notebook convention, `ClassLabel=0` means phishing and `ClassLabel=1` means legitimate; the internal model target maps phishing to `1`.
 
-If the CSV is missing, the API will return a clear dataset error instead of the React error `Unexpected end of JSON input`.
+If the CSV is missing, the API uses its documented heuristic fallback.

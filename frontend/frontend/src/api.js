@@ -56,11 +56,11 @@ export const api = {
   ransomwareHealth: () => request(`${services.ransomware}/health`),
   ransomwareReports: () => request(`${services.ransomware}/reports`),
   ransomwareJobs: () => request(`${services.ransomware}/jobs`),
-  ransomwareUpload: (file, continueToCape = false) => {
+  ransomwareUpload: (file, fullAnalysis = false) => {
     const form = new FormData();
     form.append("file", file);
-    form.append("continue_to_cape", String(continueToCape));
-    return request(`${services.ransomware}/analyze`, { method: "POST", body: form });
+    form.append("full_analysis", String(fullAnalysis));
+    return request(`${services.ransomware}/analyze`, { method: "POST", body: form }, 300000);
   },
   ransomwareJob: (id) => request(`${services.ransomware}/jobs/${id}`),
   ransomwareReport: (sampleId) => request(`${services.ransomware}/reports/${sampleId}`),
@@ -77,7 +77,9 @@ export const api = {
   idsSummary: () => request(`${services.ids}/dashboard/summary`),
   idsAlerts: () => request(`${services.ids}/dashboard/recent-alerts`),
   idsFullReport: () => request(`${services.ids}/dashboard/full-report`),
+  idsPdfReport: () => requestFile(`${services.ids}/dashboard/full-report/pdf`),
   idsCaptureStatus: () => request(`${services.ids}/dashboard/capture-status`),
+  idsToggleCapture: () => request(`${services.ids}/dashboard/capture/toggle`, { method: "POST" }),
   vulnscanHealth: () => request(`${services.vulnscan}/health`),
   vulnscanProfiles: () => request(`${services.vulnscan}/profiles`),
   vulnscanHistory: () => request(`${services.vulnscan}/scans`),

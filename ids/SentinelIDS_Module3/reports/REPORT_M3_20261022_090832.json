@@ -1,0 +1,103 @@
+{
+  "report_id": "REPORT_M3_20261022_090832",
+  "generated_at": "2026-10-22T09:08:32.537389",
+  "module": "Module 3 - Network Intrusion Detection System",
+  "platform": "SentinelIDS",
+  "summary": {
+    "total_alerts": 2,
+    "severity_distribution": {
+      "LOW": 0,
+      "MEDIUM": 2,
+      "HIGH": 0,
+      "CRITICAL": 0
+    },
+    "top_attackers": [
+      {
+        "ip": "127.0.0.1",
+        "count": 2
+      }
+    ],
+    "active_alerts": 2,
+    "total_flows_monitored": 6
+  },
+  "alerts": [
+    {
+      "id": 2,
+      "timestamp": "2026-10-22T09:08:23.034975",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 60686,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 52.6,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 52.6/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 6,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 60686,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:08:09.307886",
+          "end_time": "2026-10-22T14:38:09.307283",
+          "packet_count": 4,
+          "byte_count": 306
+        },
+        "selected_features": {
+          "duration": 0.0001,
+          "packets": 4,
+          "bytes": 306,
+          "packets_per_sec": 40000.0,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    },
+    {
+      "id": 1,
+      "timestamp": "2026-10-22T09:08:23.019867",
+      "severity": "MEDIUM",
+      "attack_type": "Behavioral Anomaly (PortScan)",
+      "src_ip": "127.0.0.1",
+      "dst_ip": "127.0.0.1",
+      "src_port": 49452,
+      "dst_port": 3000,
+      "protocol": "TCP",
+      "risk_score": 53.4,
+      "response_action": "MONITOR",
+      "details": "Attack: Behavioral Anomaly (PortScan) | Severity: MEDIUM | Risk Score: 53.4/100 | Action: MONITOR. ",
+      "status": "NEW",
+      "nmap_scan_id": null,
+      "ai_summary": null,
+      "raw_evidence": {
+        "flow_summary": {
+          "id": 5,
+          "src_ip": "127.0.0.1",
+          "dst_ip": "127.0.0.1",
+          "src_port": 49452,
+          "dst_port": 3000,
+          "protocol": "TCP",
+          "start_time": "2026-10-22T09:07:39.675588",
+          "end_time": "2026-10-22T14:37:39.676721",
+          "packet_count": 8,
+          "byte_count": 528
+        },
+        "selected_features": {
+          "duration": 0.002211,
+          "packets": 8,
+          "bytes": 528,
+          "packets_per_sec": 3618.272274988693,
+          "syn_flags": 0.0
+        },
+        "rule_match": null
+      }
+    }
+  ]
+}

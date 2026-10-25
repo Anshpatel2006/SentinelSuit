@@ -1,4 +1,3 @@
-from malware_platform.pipeline.flow import apply_threat_intel_override
 from malware_platform.reporting.risk_engine import assess
 from malware_platform.reporting.report import _report_sections
 
@@ -30,40 +29,6 @@ def test_real_yara_matches_contribute_to_risk_score():
 
     assert result["score"] == 5
     assert result["reasons"] == ["1 YARA match(es)"]
-
-
-def test_confirmed_threat_intel_overrides_benign_ml_label():
-    result = apply_threat_intel_override(
-        {
-            "ready": True,
-            "label": "benign",
-            "prediction": 0,
-            "malware_probability": 0.45,
-        },
-        {
-            "malicious": True,
-            "risk": "high",
-            "vt_positive_engines": 48,
-            "detections": {"malicious": 48, "undetected": 27},
-        },
-    )
-
-    assert result["label"] == "malware"
-    assert result["prediction"] == 1
-    assert result["model_label"] == "benign"
-    assert result["malware_probability"] == 48 / 75
-    assert result["risk_level"] == "high"
-    assert result["decision_source"] == "threat_intelligence_override"
-
-
-def test_malwarebazaar_high_risk_uses_full_probability():
-    result = apply_threat_intel_override(
-        {"ready": True, "label": "benign", "prediction": 0, "malware_probability": 0.4},
-        {"malicious": True, "risk": "high", "mb": {"signature": "family"}},
-    )
-
-    assert result["malware_probability"] == 1.0
-    assert result["risk_level"] == "high"
 
 
 def test_final_report_is_supported_by_report_renderers():

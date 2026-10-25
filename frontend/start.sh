@@ -6,6 +6,7 @@ SELECTION="${1:-all}"
 RANSOMWARE_PORT="${RANSOMWARE_PORT:-8080}"
 PHISHING_PORT="${PHISHING_PORT:-8001}"
 IDS_PORT="${IDS_PORT:-8002}"
+IDS_CAPTURE_INTERFACE="${IDS_CAPTURE_INTERFACE:-}"
 VULNSCAN_PORT="${VULNSCAN_PORT:-8765}"
 VITE_PORT="${VITE_PORT:-3000}"
 OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
@@ -14,7 +15,8 @@ OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:latest}"
 CAPE_URL="${CAPE_URL:-http://127.0.0.1:8000}"
 RANSOMWARE_PYTHON="${RANSOMWARE_PYTHON:-$ROOT/../Ransomware/.venv/bin/python}"
 PHISHING_PYTHON="${PHISHING_PYTHON:-$ROOT/../phising link/backend/.venv/bin/python}"
-IDS_PYTHON="${IDS_PYTHON:-$ROOT/../ids/SentinelIDS/.venv/bin/python}"
+IDS_MODULE_DIR="${IDS_MODULE_DIR:-$ROOT/../ids/SentinelIDS_Module3}"
+IDS_PYTHON="${IDS_PYTHON:-$IDS_MODULE_DIR/.venv/bin/python}"
 VULNSCAN_PYTHON="${VULNSCAN_PYTHON:-$ROOT/../Al-VulnScan/.venv/bin/python}"
 CHILD_PIDS=()
 
@@ -133,18 +135,33 @@ start_vulnscan() {
 }
 
 start_ids() {
-  local directory="$ROOT/../ids/SentinelIDS"
-  if [[ ! -d "$directory" || ! -x "$IDS_PYTHON" ]]; then
+  local api_url="http://127.0.0.1:$IDS_PORT/health"
+  if curl -fsS --connect-timeout 1 --max-time 2 "$api_url" >/dev/null 2>&1; then
+    echo "SentinelIDS API is already responding at http://127.0.0.1:$IDS_PORT."
+    return 0
+  fi
+  if [[ ! -d "$IDS_MODULE_DIR" || ! -x "$IDS_PYTHON" ]]; then
     echo "SentinelIDS API not started: project directory or configured Python environment is missing."
     return 0
   fi
+  if [[ "$EUID" -ne 0 ]]; then
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo "SentinelIDS requires elevated privileges for packet capture; sudo is unavailable."
+      return 0
+    fi
+    sudo -v
+  fi
   (
-    cd "$directory"
-    export IDS_ACTIVE_SCAN_ENABLED="${IDS_ACTIVE_SCAN_ENABLED:-0}"
-    exec "$IDS_PYTHON" -m uvicorn api.app:app --host 127.0.0.1 --port "$IDS_PORT"
+    cd "$IDS_MODULE_DIR"
+    export AUTO_TRIGGER_NMAP_ON_HIGH_RISK="${AUTO_TRIGGER_NMAP_ON_HIGH_RISK:-0}"
+    export DEFAULT_INTERFACE="$IDS_CAPTURE_INTERFACE"
+    if [[ "$EUID" -eq 0 ]]; then
+      exec "$IDS_PYTHON" -m uvicorn app.main:app --host 127.0.0.1 --port "$IDS_PORT"
+    fi
+    exec sudo -n --preserve-env=AUTO_TRIGGER_NMAP_ON_HIGH_RISK,DEFAULT_INTERFACE "$IDS_PYTHON" -m uvicorn app.main:app --host 127.0.0.1 --port "$IDS_PORT"
   ) &
   CHILD_PIDS+=("$!")
-  echo "SentinelIDS API starting at http://127.0.0.1:$IDS_PORT (active follow-up scans default to disabled)"
+  echo "SentinelIDS API starting with elevated privileges at http://127.0.0.1:$IDS_PORT (automatic follow-up scans default to disabled)"
 }
 
 start_frontend() {

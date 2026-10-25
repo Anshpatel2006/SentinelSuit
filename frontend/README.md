@@ -10,7 +10,7 @@ automatically.
 | AI-VulnScan | `Al-VulnScan/api.py` | `http://127.0.0.1:8765` |
 | Phishing Detection | `phising link/backend/main.py` | `http://127.0.0.1:8001` |
 | Ransomware Analysis | `Ransomware/src/malware_platform/api` | `http://127.0.0.1:8080` |
-| SentinelIDS | `ids/SentinelIDS/api` | `http://127.0.0.1:8002` |
+| SentinelIDS | `ids/SentinelIDS/app` | `http://127.0.0.1:8002` |
 | Unified frontend | `frontend/frontend` | `http://127.0.0.1:3000` |
 
 ## Run locally
@@ -66,9 +66,9 @@ directly when starting the UI.
 - Startup performs no scans, sample uploads, packet capture, or CAPE data reset.
 - Starting CAPE may require administrator privileges; it is only asked to start
   its system service and does not upload or analyze samples.
-- SentinelIDS active follow-up scans default to disabled
-  (`IDS_ACTIVE_SCAN_ENABLED=0`). Packet capture must be started separately by
-  an authorized operator.
+- SentinelIDS automatic Nmap follow-up scans default to disabled
+  (`AUTO_TRIGGER_NMAP_ON_HIGH_RISK=0`). Packet capture and explicit scans
+  require separate operator action.
 - AI-VulnScan requires explicit authorization in the UI; multi-host and
   comprehensive scans require additional confirmation. Its API binds to
   loopback and receives the Vite origin for CORS automatically.

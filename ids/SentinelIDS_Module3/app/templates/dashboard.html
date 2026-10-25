@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelSuite — SentinelIDS Dashboard (Module 3)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        cardBg: '#111827',
+                        borderCol: '#1f2937',
+                        accentBlue: '#38bdf8',
+                        accentPurple: '#818cf8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.08); }
+        }
+        .pulse-active { animation: pulse-glow 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-200 min-h-screen font-sans flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-borderCol bg-cardBg/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-white tracking-wide flex items-center gap-2">
+                    SentinelSuite <span class="text-xs bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded-full font-mono">Module 3 — SentinelIDS</span>
+                </h1>
+                <p class="text-xs text-slate-400">Network Intrusion Detection & Threat Prevention Platform</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div id="serviceStatusPill" class="flex items-center space-x-2 text-xs px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-active"></span>
+                <span class="font-mono font-medium">Service Ready</span>
+            </div>
+            <a href="/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-code"></i> Swagger API
+            </a>
+            <button onclick="generateReport()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg font-medium shadow-lg shadow-indigo-600/30 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-pdf"></i> Generate PDF Report
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+        <!-- Top Metrics Cards (Slide 36) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-cardBg border border-borderCol rounded-xl p-5 shadow-sm">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">
+                    <span>Flows Monitored</span>
+                    <i class="fa-solid fa-network-wired text-cyan-400 text-base"></i>
+                </div>
+                <div class="text-2xl font-bold text-white font-mono" id="statTotalFlows">0</div>
+                <div class="text-xs text-slate-500 mt-1">Reassembled 5-tuple streams</div>
+            </div>
+
+            <div class="bg-cardBg border border-borderCol rounded-xl p-5 shadow-sm">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">
+                    <span>Active Threats</span>
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 text-base"></i>
+                </div>
+                <div class="text-2xl font-bold text-rose-400 font-mono" id="statTotalAlerts">0</div>
+                <div class="text-xs text-rose-400/80 mt-1 flex items-center gap-1">
+                    <span id="statCriticalCount">0 Critical</span> | <span id="statHighCount">0 High</span>
+                </div>
+            </div>
+
+            <div class="bg-cardBg border border-borderCol rounded-xl p-5 shadow-sm">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">
+                    <span>Live Packet Buffer</span>
+                    <i class="fa-solid fa-layer-group text-indigo-400 text-base"></i>
+                </div>
+                <div class="text-2xl font-bold text-white font-mono" id="statCapturedPackets">0</div>
+                <div class="text-xs text-slate-500 mt-1" id="statCaptureState">Engine IDLE</div>
+            </div>
+
+            <div class="bg-cardBg border border-borderCol rounded-xl p-5 shadow-sm">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">
+                    <span>Automated Scans</span>
+                    <i class="fa-solid fa-crosshairs text-amber-400 text-base"></i>
+                </div>
+                <div class="text-2xl font-bold text-amber-400 font-mono" id="statNmapScans">0</div>
+                <div class="text-xs text-slate-500 mt-1">Bounded Nmap probes</div>
+            </div>
+        </div>
+
+        <!-- Capture Control & PCAP Ingestion Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Live Capture Controls -->
+            <div class="lg:col-span-2 bg-cardBg border border-borderCol rounded-xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-satellite-dish text-cyan-400"></i> Live Network Sniffer (Scapy)
+                    </h2>
+                    <span id="sniffingIndicator" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-mono border border-slate-700">
+                        IDLE
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Network Interface</label>
+                        <select id="ifaceSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                            <option value="lo" selected>lo (Loopback / Localhost)</option>
+                            <option value="eth0">eth0 (Ethernet)</option>
+                            <option value="any">any (All interfaces)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">BPF Capture Filter</label>
+                        <input id="filterInput" type="text" value="tcp" placeholder="e.g. tcp, port 80" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button onclick="startCapture()" id="btnStart" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-play"></i> Start
+                        </button>
+                        <button onclick="stopCapture()" id="btnStop" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-medium py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Live Packets Strip -->
+                <div class="bg-slate-950/70 rounded-lg p-3 border border-slate-800">
+                    <div class="text-[11px] text-slate-400 font-mono flex justify-between mb-1.5">
+                        <span>LATEST CAPTURED RAW PACKETS:</span>
+                        <span id="packetRateText" class="text-cyan-400">0 pkts/s</span>
+                    </div>
+                    <div id="packetsConsole" class="font-mono text-[11px] text-slate-300 space-y-1 max-h-28 overflow-y-auto">
+                        <div class="text-slate-600 italic">No packet frames in buffer. Click Start to monitor traffic.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Offline PCAP Upload -->
+            <div class="bg-cardBg border border-borderCol rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-file-arrow-up text-indigo-400"></i> Offline PCAP Ingestion
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4">Analyze offline <code>.pcap</code> or <code>.pcapng</code> captures via the CICFlowMeter ML engine.</p>
+                    
+                    <label class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/40">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 mb-2"></i>
+                        <span class="text-xs text-slate-300 font-medium">Click to upload PCAP</span>
+                        <span class="text-[10px] text-slate-500 mt-1">.pcap, .pcapng files up to 50MB</span>
+                        <input type="file" id="pcapFileInput" accept=".pcap,.pcapng,.cap" class="hidden" onchange="uploadPCAP(this)">
+                    </label>
+                </div>
+                <div id="pcapUploadStatus" class="text-xs text-slate-400 mt-3 font-mono"></div>
+            </div>
+        </div>
+
+        <!-- Real-Time Alerts Table (Slide 30, 36) -->
+        <div class="bg-cardBg border border-borderCol rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-rose-500"></i> Real-Time Security Incident Stream
+                </h2>
+                <button onclick="refreshData()" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 font-mono">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono text-[10px] border-b border-borderCol">
+                        <tr>
+                            <th class="py-3 px-4">Time</th>
+                            <th class="py-3 px-4">Severity</th>
+                            <th class="py-3 px-4">Threat Classification</th>
+                            <th class="py-3 px-4">Source $\rightarrow$ Target</th>
+                            <th class="py-3 px-4">Risk Score</th>
+                            <th class="py-3 px-4">Action</th>
+                            <th class="py-3 px-4 text-right">Investigation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody" class="divide-y divide-borderCol">
+                        <tr>
+                            <td colspan="7" class="py-6 text-center text-slate-500">Loading alerts stream...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AI Briefing Modal -->
+    <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-borderCol rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-borderCol pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-brain text-cyan-400"></i> AI Incident Briefing & Mitigation Checklist
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-base">&times;</button>
+            </div>
+            <div id="aiModalContent" class="text-xs text-slate-300 leading-relaxed font-mono whitespace-pre-wrap max-h-[60vh] overflow-y-auto bg-slate-950 p-4 rounded-lg border border-slate-800">
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script>
+        const API_BASE = '/api/v1';
+        let currentAlerts = [];
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/packet/status`);
+                const data = await res.json();
+                
+                const isRunning = data.status === 'RUNNING';
+                const pill = document.getElementById('sniffingIndicator');
+                const stateText = document.getElementById('statCaptureState');
+                
+                if (isRunning) {
+                    pill.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 font-mono border border-emerald-800 flex items-center gap-1.5';
+                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 pulse-active"></span> RUNNING';
+                    stateText.innerText = `Sniffing on ${data.interface}`;
+                    stateText.className = 'text-xs text-emerald-400 mt-1';
+                } else {
+                    pill.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-mono border border-slate-700';
+                    pill.innerText = data.status || 'STOPPED';
+                    stateText.innerText = 'Engine IDLE';
+                    stateText.className = 'text-xs text-slate-500 mt-1';
+                }
+
+                document.getElementById('statCapturedPackets').innerText = data.captured_packets || 0;
+                
+                // Render packet console
+                const consoleEl = document.getElementById('packetsConsole');
+                if (data.recent_packets_sample && data.recent_packets_sample.length > 0) {
+                    consoleEl.innerHTML = data.recent_packets_sample.slice(-6).map(p => {
+                        return `<div class="truncate text-[10px] text-slate-300">
+                            <span class="text-slate-500">${p.timestamp ? p.timestamp.substring(11, 19) : ''}</span>
+                            <span class="text-cyan-400 font-semibold">[${p.protocol}]</span>
+                            ${p.src_ip}:${p.src_port} &rarr; ${p.dst_ip}:${p.dst_port}
+                            <span class="text-slate-500">len:${p.length} flags:${p.flags_val || 0}</span>
+                        </div>`;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error('Status fetch error:', err);
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${API_BASE}/ids/stats`);
+                const data = await res.json();
+                
+                document.getElementById('statTotalFlows').innerText = data.total_flows || 0;
+                document.getElementById('statTotalAlerts').innerText = data.total_alerts || 0;
+                document.getElementById('statNmapScans').innerText = data.total_nmap_scans || 0;
+
+                const dist = data.severity_distribution || {};
+                document.getElementById('statCriticalCount').innerText = `${dist.CRITICAL || 0} Critical`;
+                document.getElementById('statHighCount').innerText = `${dist.HIGH || 0} High`;
+            } catch (err) {
+                console.error('Stats fetch error:', err);
+            }
+        }
+
+        async function fetchAlerts() {
+            try {
+                const res = await fetch(`${API_BASE}/ids/alerts?limit=20`);
+                const data = await res.json();
+                currentAlerts = data.alerts || [];
+                
+                const tbody = document.getElementById('alertsTableBody');
+                if (currentAlerts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-500">No threats detected yet. Start capture and send network traffic.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = currentAlerts.map(a => {
+                    let badgeClass = "bg-slate-800 text-slate-300 border-slate-700";
+                    if (a.severity === 'CRITICAL') badgeClass = "bg-rose-950/80 text-rose-400 border-rose-800";
+                    else if (a.severity === 'HIGH') badgeClass = "bg-amber-950/80 text-amber-400 border-amber-800";
+                    else if (a.severity === 'MEDIUM') badgeClass = "bg-yellow-950/80 text-yellow-400 border-yellow-800";
+                    else if (a.severity === 'LOW') badgeClass = "bg-emerald-950/80 text-emerald-400 border-emerald-800";
+
+                    return `<tr class="hover:bg-slate-900/50 transition">
+                        <td class="py-3 px-4 font-mono text-slate-400">${a.timestamp ? a.timestamp.substring(11, 19) : ''}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${a.severity}</span>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-white">${a.attack_type}</td>
+                        <td class="py-3 px-4 font-mono text-slate-300">${a.src_ip}:${a.src_port} &rarr; ${a.dst_ip}:${a.dst_port}</td>
+                        <td class="py-3 px-4 font-mono font-semibold ${a.risk_score >= 70 ? 'text-rose-400' : 'text-slate-300'}">${a.risk_score}/100</td>
+                        <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${a.response_action}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="viewAIModal(${a.id})" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2.5 py-1 rounded border border-slate-700 transition">
+                                <i class="fa-solid fa-magnifying-glass"></i> AI Triage
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Alerts fetch error:', err);
+            }
+        }
+
+        async function startCapture() {
+            const iface = document.getElementById('ifaceSelect').value;
+            const filter = document.getElementById('filterInput').value;
+            await fetch(`${API_BASE}/packet/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ interface: iface, filter: filter })
+            });
+            fetchStatus();
+        }
+
+        async function stopCapture() {
+            await fetch(`${API_BASE}/packet/stop`, { method: 'POST' });
+            fetchStatus();
+            fetchAlerts();
+            fetchStats();
+        }
+
+        async function uploadPCAP(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const statusEl = document.getElementById('pcapUploadStatus');
+            statusEl.innerText = `Analyzing ${file.name}...`;
+
+            try {
+                const res = await fetch(`${API_BASE}/packet/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                statusEl.innerText = `Uploaded: ${data.results.threats_detected} threats flagged from ${data.results.total_flows} flows!`;
+                fetchAlerts();
+                fetchStats();
+            } catch (err) {
+                statusEl.innerText = `Upload failed: ${err.message}`;
+            }
+        }
+
+        async function generateReport() {
+            const res = await fetch(`${API_BASE}/ids/report/generate`, { method: 'POST' });
+            const data = await res.json();
+            window.open(`${API_BASE}/ids/report/download/${data.report_id}?format=pdf`, '_blank');
+        }
+
+        function viewAIModal(alertId) {
+            const alert = currentAlerts.find(a => a.id === alertId);
+            if (!alert) return;
+            const content = alert.ai_summary || `Alert ID: ${alert.id}\nAttack: ${alert.attack_type}\nSeverity: ${alert.severity}\nRisk Score: ${alert.risk_score}/100\nDetails: ${alert.details}`;
+            document.getElementById('aiModalContent').innerText = content;
+            document.getElementById('aiModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('aiModal').classList.add('hidden');
+        }
+
+        function refreshData() {
+            fetchStatus();
+            fetchStats();
+            fetchAlerts();
+        }
+
+        // Auto polling every 2.5 seconds
+        refreshData();
+        setInterval(fetchStatus, 2500);
+        setInterval(fetchAlerts, 5000);
+        setInterval(fetchStats, 5000);
+    </script>
+</body>
+</html>

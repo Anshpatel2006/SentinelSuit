@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-The AI Malware Analysis Platform analyzes suspicious files through a controlled hybrid workflow: hashing, threat-intelligence lookup, static analysis, CAPE sandbox execution, memory-feature extraction, machine-learning classification, IOC extraction, risk scoring, and report generation.
+The AI Malware Analysis Platform offers a lookup-only workflow and an optional full-analysis workflow. Lookup-only calculates hashes, checks VirusTotal and MalwareBazaar, and generates a report. Full analysis continues through static analysis, CAPE, memory features, and ML.
 
 This document is the baseline for implementation, review, testing, and diagram updates. Items marked **TBD** require confirmation.
 
@@ -12,13 +12,9 @@ This document is the baseline for implementation, review, testing, and diagram u
 
 - Sample upload and validation through the API, CLI, and dashboard.
 - MD5, SHA-1, and SHA-256 hashing.
-- Optional VirusTotal and MalwareBazaar lookup.
-- Early reporting for known samples.
-- Static analysis and YARA indicators for unknown samples.
-- Isolated CAPE execution and memory-dump collection when configured.
-- MalMem2022 55-feature extraction and Random Forest classification.
-- Blocking ML prediction when required features are unresolved.
-- IOC extraction, risk scoring, and JSON, HTML, and PDF reports.
+- VirusTotal and MalwareBazaar hash lookups.
+- Threat-intelligence risk scoring and JSON, HTML, and PDF reports.
+- Optional full analysis using static analysis, CAPE, memory-feature extraction, and ML.
 - FastAPI job/status endpoints and React analyst views.
 
 ### Out of scope
@@ -36,10 +32,6 @@ This document is the baseline for implementation, review, testing, and diagram u
 | CLI operator | Starts analysis from the command line. |
 | React dashboard | Provides upload, job, dashboard, and report views. |
 | VirusTotal / MalwareBazaar | Optional hash and reputation lookup. |
-| CAPE | Isolated dynamic execution and behavior/memory collection. |
-| Volatility 3 | Memory-dump analysis and feature extraction. |
-| Random Forest | MalMem55 classification. |
-| YARA | Rule-based static indicators. |
 
 ## 4. Functional Requirements
 
@@ -47,16 +39,12 @@ This document is the baseline for implementation, review, testing, and diagram u
 | --- | --- | --- |
 | FR-01 | The system shall accept and validate a submitted sample. | Must |
 | FR-02 | The system shall calculate MD5, SHA-1, and SHA-256 before lookup. | Must |
-| FR-03 | The system shall tolerate unavailable optional intelligence providers. | Must |
-| FR-04 | A known sample shall receive an early report without unnecessary sandbox execution. | Must |
-| FR-05 | An unknown sample shall proceed through static analysis. | Must |
-| FR-06 | CAPE execution shall occur only in the configured isolated lab. | Must |
-| FR-07 | The system shall emit the MalMem2022 55-column vector in dataset order. | Must |
-| FR-08 | ML prediction shall be blocked when the vector is incomplete or unresolved. | Must |
-| FR-09 | The system shall persist job state and expose progress and result information. | Must |
-| FR-10 | The system shall extract IOCs, calculate risk, and generate reports. | Must |
-| FR-11 | The dashboard shall support upload, polling, and report review. | Should |
-| FR-12 | Model retraining shall be an explicit operator action separate from normal analysis. | Should |
+| FR-03 | The system shall tolerate unavailable threat-intelligence providers and report their lookup status. | Must |
+| FR-04 | Lookup-only mode shall not submit samples to CAPE or run static/ML analysis. | Must |
+| FR-05 | Full mode shall support static analysis, CAPE, memory features, and ML classification. | Should |
+| FR-06 | The system shall calculate risk and generate JSON, HTML, and PDF reports. | Must |
+| FR-07 | The system shall persist job state and expose progress and result information. | Must |
+| FR-08 | The dashboard shall support mode selection, upload, polling, and report review. | Should |
 
 ## 5. Non-functional Requirements
 
@@ -76,11 +64,15 @@ The system handles potentially malicious binaries, hashes, static findings, sand
 
 The MalMem55 contract uses the exact feature names and order from `data/Obfuscated-MalMem2022.csv` and `models/malmem55_features.json`. Production model, threshold, and metrics are under `models/`.
 
-Normal state progression is:
+Lookup-only state progression is:
 
-`received -> hashing -> threat_intel -> known_report | static_analysis -> cape -> memory_features -> classification -> reporting -> completed`
+`received -> hashing -> threat_intel -> risk_assessment -> reporting -> completed`
 
-Any stage may produce a controlled `failed` or `degraded` result. A known sample may go directly from threat intelligence to reporting.
+Full-analysis mode continues:
+
+`threat_intel -> static_analysis -> cape -> memory_features -> classification -> reporting -> completed`
+
+Any stage may produce a controlled `failed` or `degraded` result. Threat-intelligence providers may be unavailable; analysis still produces a report with the lookup results.
 
 ## 7. API, UI, and Verification
 
@@ -90,8 +82,9 @@ Acceptance checks:
 
 - `pytest` passes.
 - Known hashes use the early-report path.
-- Unknown samples report unavailable external stages clearly when CAPE is absent.
-- Complete vectors reach the model; incomplete vectors are blocked.
+- Lookup-only mode does not contact CAPE.
+- Full mode reports unavailable CAPE stages clearly when CAPE is absent.
+- Complete feature vectors reach the model; incomplete vectors are blocked.
 - JSON reports contain hashes, stage status, risk/classification evidence, and available IOCs.
 - The dashboard can upload, poll, and open a report.
 - Secrets and generated runtime artifacts are absent from the deliverable.

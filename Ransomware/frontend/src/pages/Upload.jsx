@@ -8,7 +8,7 @@ export default function Upload() {
   const [dragging, setDragging] = useState(false);
   const [job, setJob] = useState(null);
   const [error, setError] = useState("");
-  const [continueToCape, setContinueToCape] = useState(false);
+  const [fullAnalysis, setFullAnalysis] = useState(false);
   const inputRef = useRef(null);
 
   useJobPolling(job, setJob);
@@ -17,18 +17,18 @@ export default function Upload() {
     setError("");
     setJob(null);
     try {
-      const newJob = await uploadSample(file, continueToCape);
+      const newJob = await uploadSample(file, fullAnalysis);
       setJob(newJob);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     }
-  }, [continueToCape]);
+  }, [fullAnalysis]);
 
   return (
     <div>
       <PageHeader
         title="Upload Sample"
-        subtitle="Submit a file for hybrid static, dynamic, and ML analysis"
+        subtitle="Choose threat-intelligence lookup only or the full analysis pipeline"
       />
 
       {error && <Alert>{error}</Alert>}
@@ -39,8 +39,8 @@ export default function Upload() {
             <span className="workflow-kicker">ANALYSIS ENGINE</span>
             <h2 id="file-workflow-title">File analysis workflow</h2>
             <p className="muted">
-              Hash-based threat intelligence routes known malware to an early report; other
-              samples continue through static and sandbox analysis.
+              Choose whether to stop after VirusTotal and MalwareBazaar lookups or continue
+              through static analysis, CAPE sandbox, and machine-learning analysis.
             </p>
           </div>
         </div>
@@ -48,27 +48,11 @@ export default function Upload() {
           <div className="workflow-node workflow-input">Start · Upload sample</div>
           <span className="workflow-arrow" aria-hidden="true">↓</span>
           <div className="workflow-node workflow-hash">
-            Generate MD5, SHA-1, and SHA-256 hashes · Check digital signature
+            Generate MD5, SHA-1, and SHA-256 hashes
           </div>
           <span className="workflow-arrow" aria-hidden="true">↓</span>
           <div className="workflow-node workflow-intel">
             Threat intelligence lookup · VirusTotal + MalwareBazaar
-          </div>
-          <div className="workflow-branches">
-            <article className="workflow-path workflow-known">
-              <h3>Known malicious</h3>
-              <p>
-                Generate an early detection report. CAPE can still run when
-                “Continue to CAPE” is enabled.
-              </p>
-            </article>
-            <article className="workflow-path workflow-unknown">
-              <h3>Unknown or continued sample</h3>
-              <p>
-                Static analysis → CAPE sandbox → memory-feature extraction →
-                MalMem-55 ML classification → IOC extraction
-              </p>
-            </article>
           </div>
           <span className="workflow-arrow" aria-hidden="true">↓</span>
           <div className="workflow-node workflow-output">
@@ -76,6 +60,34 @@ export default function Upload() {
           </div>
         </div>
       </section>
+
+      <fieldset className="analysis-option">
+        <legend>Analysis mode</legend>
+        <label>
+          <input
+            type="radio"
+            name="analysis-mode"
+            checked={!fullAnalysis}
+            onChange={() => setFullAnalysis(false)}
+          />
+          <span>
+            <strong>VirusTotal + MalwareBazaar only</strong>
+            <small>Check hashes and generate a report. Do not submit the file to CAPE.</small>
+          </span>
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="analysis-mode"
+            checked={fullAnalysis}
+            onChange={() => setFullAnalysis(true)}
+          />
+          <span>
+            <strong>Full analysis including CAPE</strong>
+            <small>Run static analysis, then submit the sample to the configured CAPE sandbox.</small>
+          </span>
+        </label>
+      </fieldset>
 
       <div
         className={`dropzone ${dragging ? "dragging" : ""}`}
@@ -96,7 +108,6 @@ export default function Upload() {
           ref={inputRef}
           type="file"
           hidden
-          accept=".exe,.dll,.scr,.msi,.jar,.pdf,.doc,.docx,.bin"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handleFile(file);
@@ -104,20 +115,8 @@ export default function Upload() {
         />
         <div className="dropzone-icon">📁</div>
         <p>Drag & drop a sample here, or click to browse</p>
-        <p className="muted small">Supported: exe, dll, scr, msi, jar, pdf, doc, bin (max 200 MB)</p>
+        <p className="muted small">All file extensions supported (max 250 MiB)</p>
       </div>
-
-      <label className="analysis-option">
-        <input
-          type="checkbox"
-          checked={continueToCape}
-          onChange={(event) => setContinueToCape(event.target.checked)}
-        />
-        <span>
-          <strong>Continue to CAPE if malware is detected</strong>
-          <small>Use this for deeper sandbox analysis after VirusTotal or MalwareBazaar flags the sample.</small>
-        </span>
-      </label>
 
       {job && (
         <div className="panel job-status">

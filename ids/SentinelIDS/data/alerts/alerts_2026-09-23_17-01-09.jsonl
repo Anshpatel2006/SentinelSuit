@@ -1,1 +1,0 @@
-{"timestamp": 1790182869.1460533, "source_ip": "10.0.0.1", "destination_ip": "10.0.0.2", "protocol": "TCP", "source_port": null, "destination_port": null, "detection_method": "ML", "attack_name": "ANOMALY", "risk_score": 70, "severity": "HIGH", "ml_prediction": "ANOMALY", "ml_confidence": 0.9, "signature_alert": []}

@@ -79,3 +79,20 @@ vite.svg
 # Large raw datasets (>100MB exceeds GitHub file size limit)
 **/models/IDS_Complete_Results.csv
 **/models/Monday-WorkingHours.pcap_ISCX.csv
+
+# Generated dependencies and local environments
+/.venv/
+/venv/
+**/.venv/
+**/venv/
+**/node_modules/
+__pycache__/
+*.py[cod]
+# Downloaded IDS datasets
+/ids/drive-download-*/
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key

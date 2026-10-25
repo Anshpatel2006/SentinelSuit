@@ -27,7 +27,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.model_selection import train_test_split
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_NAME = "phishing link detection dataset.csv"
+DATASET_NAME = "phishing link detection dataset - phishing link detection dataset.csv"
 DATASET_PATH = BASE_DIR / DATASET_NAME
 
 FEATURES = [
@@ -155,22 +155,39 @@ def resolve_public_address(host, port):
 
 
 class PinnedHTTPConnection(http.client.HTTPConnection):
-    def __init__(self, host, port, address, timeout):
+    def __init__(self, host, port, family, address, timeout):
         super().__init__(host, port, timeout=timeout)
+        self.family = family
         self.address = address
 
     def connect(self):
-        self.sock = socket.create_connection(self.address, timeout=self.timeout)
+        self.sock = create_pinned_socket(self.family, self.address, self.timeout)
 
 
 class PinnedHTTPSConnection(http.client.HTTPSConnection):
-    def __init__(self, host, port, address, timeout):
+    def __init__(self, host, port, family, address, timeout):
         super().__init__(host, port, timeout=timeout, context=ssl.create_default_context())
+        self.family = family
         self.address = address
 
     def connect(self):
-        sock = socket.create_connection(self.address, timeout=self.timeout)
-        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+        sock = create_pinned_socket(self.family, self.address, self.timeout)
+        try:
+            self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+        except Exception:
+            sock.close()
+            raise
+
+
+def create_pinned_socket(family, address, timeout):
+    sock = socket.socket(family, socket.SOCK_STREAM)
+    try:
+        sock.settimeout(timeout)
+        sock.connect(address)
+    except Exception:
+        sock.close()
+        raise
+    return sock
 
 
 def fetch_website_url(url):
@@ -194,9 +211,8 @@ def fetch_website_url(url):
     except UnicodeError as exc:
         raise URLFetchBlocked("The URL contains an invalid hostname.") from exc
     family, address = resolve_public_address(host, port)
-    del family
     connection_type = PinnedHTTPSConnection if scheme == "https" else PinnedHTTPConnection
-    connection = connection_type(host, port, address, timeout=8)
+    connection = connection_type(host, port, family, address, timeout=8)
     request_target = parsed.path or "/"
     if parsed.query:
         request_target += f"?{parsed.query}"
@@ -258,7 +274,7 @@ def subdomain_count(host):
     return max(0, len(host.split(".")) - 2)
 
 
-def extract_features(url):
+def _extract_feature_values(url):
     p = urlparse(url)
     host = p.hostname or ""
     host_no_www = host[4:] if host.startswith("www.") else host
@@ -284,7 +300,11 @@ def extract_features(url):
         "domain_name_length": len(host_no_www),
         "percentage_numeric_chars": (digits / len(url) * 100) if url else 0,
     }
-    return pd.DataFrame([row])[FEATURES]
+    return row
+
+
+def extract_features(url):
+    return pd.DataFrame([_extract_feature_values(url)])[FEATURES]
 
 
 def prepare_dataset(path):
@@ -297,13 +317,16 @@ def prepare_dataset(path):
     df["ClassLabel"] = pd.to_numeric(df["ClassLabel"], errors="coerce")
     df = df.dropna(subset=["ClassLabel"])
 
-    if all(c in df.columns for c in FEATURES):
-        X = df[FEATURES].copy()
-    elif "URL" in df.columns:
-        X = pd.concat(
-            [extract_features(normalize_url(u)) for u in df["URL"].fillna("")],
-            ignore_index=True,
+    if "URL" in df.columns:
+        X = pd.DataFrame.from_records(
+            [
+                _extract_feature_values(normalize_url(url))
+                for url in df["URL"].fillna("")
+            ],
+            columns=FEATURES,
         )
+    elif all(c in df.columns for c in FEATURES):
+        X = df[FEATURES].copy()
     else:
         raise ValueError("Dataset must contain either all engineered feature columns or a URL column.")
 
@@ -357,6 +380,7 @@ def train_model():
             "train_rows": 0,
             "test_rows": 0,
             "fallback": True,
+            "training_source": "heuristic_fallback",
         }
         return
 
@@ -390,6 +414,7 @@ def train_model():
         "rows": int(len(df)),
         "train_rows": int(len(X_train)),
         "test_rows": int(len(X_test)),
+        "training_source": DATASET_PATH.name,
     }
 
 

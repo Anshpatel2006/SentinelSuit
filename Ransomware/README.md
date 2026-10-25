@@ -1,6 +1,6 @@
 # AI Malware Analysis Platform
 
-Hybrid malware analysis pipeline combining static analysis, CAPE sandbox dynamic analysis, Volatility memory forensics, and Random Forest ML classification.
+Malware analysis platform with two upload modes: hash lookups through VirusTotal and MalwareBazaar only, or full analysis with static inspection, CAPE sandbox, memory features, and ML classification.
 
 ## Project Structure
 
@@ -80,10 +80,16 @@ Open http://localhost:5173 — the UI proxies API requests to port 8080.
 ## Analysis Flow
 
 ```
-Upload → Hash → Threat Intel
-  ├─ Known  → Report (JSON/HTML/PDF)
-  └─ Unknown → Static → CAPE → Memory Dump → MalMem55 → ML → IOCs → Risk Score
+Lookup only: Upload → Hash → VirusTotal + MalwareBazaar → Report
+Full:        Upload → Hash → Threat Intel → Static → CAPE → Memory/ML → Report
 ```
+
+The dashboard defaults to lookup-only. Full analysis is an explicit choice and submits the
+sample to the configured CAPE sandbox; use it only with an isolated, trusted CAPE environment.
+
+## Upload Limits
+
+Uploads accept any file extension and are limited to 250 MiB.
 
 ## Security
 

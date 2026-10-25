@@ -14,7 +14,7 @@ function Notice({ children }) {
 
 export default function Ransomware() {
   const [file, setFile] = useState(null);
-  const [continueToCape, setContinueToCape] = useState(false);
+  const [fullAnalysis, setFullAnalysis] = useState(false);
   const [job, setJob] = useState(null);
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
@@ -54,7 +54,7 @@ export default function Ransomware() {
     setError("");
     setReport(null);
     try {
-      setJob(await api.ransomwareUpload(file, continueToCape));
+      setJob(await api.ransomwareUpload(file, fullAnalysis));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -93,10 +93,9 @@ export default function Ransomware() {
     URL.revokeObjectURL(url);
   }
 
-  const ml = report?.ml;
-  const cape = report?.cape;
-  const capeStatus = cape?.status || cape?.task?.status || (cape?.statistics ? "reported" : "not available");
-  const stages = ["Preparing sample", "Static analysis", "CAPE sandbox", "ML analysis", "Report ready"];
+  const stages = fullAnalysis
+    ? ["Preparing sample", "Static analysis", "CAPE sandbox", "ML analysis", "Report ready"]
+    : ["Preparing sample", "Generate hashes", "VirusTotal + MalwareBazaar", "Report ready"];
   const currentStage = job?.status === "completed"
     ? "Report ready"
     : job?.status === "failed"
@@ -104,44 +103,52 @@ export default function Ransomware() {
       : job?.current_stage || "Queued";
   const stageIndex = (() => {
     const value = currentStage.toLowerCase();
-    if (value.includes("report") || value.includes("risk") || value.includes("indicator")) return 4;
-    if (value.includes("machine-learning") || value.includes("ml") || value.includes("memory")) return 3;
-    if (value.includes("cape") || value.includes("sandbox")) return 2;
-    if (value.includes("static") || value.includes("signature") || value.includes("hash")) return 1;
+    if (value.includes("report") || value.includes("risk") || value.includes("complete")) return stages.length - 1;
+    if (fullAnalysis && (value.includes("machine-learning") || value.includes("ml") || value.includes("memory"))) return 3;
+    if (fullAnalysis && (value.includes("cape") || value.includes("sandbox"))) return 2;
+    if (fullAnalysis && value.includes("static")) return 1;
+    if (fullAnalysis && (value.includes("virus") || value.includes("malwarebazaar") || value.includes("threat"))) return 1;
+    if (!fullAnalysis && (value.includes("virus") || value.includes("malwarebazaar") || value.includes("threat"))) return 2;
+    if (value.includes("hash")) return 1;
     if (value.includes("prepar") || value.includes("upload") || value.includes("threat")) return 0;
-    return job?.status === "completed" ? 4 : 0;
+    return job?.status === "completed" ? stages.length - 1 : 0;
   })();
 
   return <>
     <section className="page-intro">
-      <div><span className="eyebrow">FILE ANALYSIS / MALWARE PLATFORM</span><h2>Ransomware analysis</h2><p>Submit a sample to the existing static, ML, and optional CAPE pipeline.</p></div>
+      <div><span className="eyebrow">FILE ANALYSIS / MALWARE PLATFORM</span><h2>Ransomware analysis</h2><p>Choose threat-intelligence lookup only or full analysis with the CAPE sandbox.</p></div>
       <Badge level="info">POST /api/v1/analyze</Badge>
     </section>
     {error && <Notice>{error}</Notice>}
     <section className="panel workflow-panel" aria-labelledby="ransomware-workflow-heading">
-      <div className="panel-heading"><div><span className="eyebrow">ANALYSIS FLOW</span><h3 id="ransomware-workflow-heading">File analysis workflow</h3><p className="muted">Known malware can stop after intelligence checks unless CAPE continuation is requested.</p></div></div>
+      <div className="panel-heading"><div><span className="eyebrow">ANALYSIS FLOW</span><h3 id="ransomware-workflow-heading">File analysis workflow</h3><p className="muted">{fullAnalysis ? "Full mode adds static analysis, CAPE sandbox submission, memory analysis, and ML classification after threat-intelligence lookups." : "Lookup-only mode checks VirusTotal and MalwareBazaar and does not submit the file to CAPE."}</p></div></div>
       <div className="workflow-flow">
         <div className="workflow-node workflow-input">Upload sample</div>
         <span className="workflow-arrow" aria-hidden="true">↓</span>
-        <div className="workflow-node workflow-validation">Validate and store file · Generate MD5 / SHA-1 / SHA-256 · Check signature</div>
+        <div className="workflow-node workflow-validation">Validate and store file · Generate MD5 / SHA-1 / SHA-256</div>
         <span className="workflow-arrow" aria-hidden="true">↓</span>
         <div className="workflow-node workflow-intel">VirusTotal + MalwareBazaar lookup</div>
-        <div className="workflow-branches">
-          <article className="workflow-path workflow-known"><h4>Known malicious</h4><p>Write an early detection report; continue to CAPE only when explicitly enabled.</p></article>
-          <article className="workflow-path workflow-unknown"><h4>Unknown or continued sample</h4><p>Static analysis → optional CAPE sandbox → memory feature extraction → ML classification when features are available → IOC extraction.</p></article>
-        </div>
-        <span className="workflow-arrow" aria-hidden="true">↓</span>
+        {fullAnalysis && <>
+          <span className="workflow-arrow" aria-hidden="true">↓</span>
+          <div className="workflow-node workflow-validation">Static analysis · CAPE sandbox · Memory features · ML</div>
+          <span className="workflow-arrow" aria-hidden="true">↓</span>
+        </>}
+        {!fullAnalysis && <span className="workflow-arrow" aria-hidden="true">↓</span>}
         <div className="workflow-node workflow-output">Risk assessment · JSON / HTML / PDF report</div>
       </div>
     </section>
     <form className="upload-panel" onSubmit={submit}>
+      <fieldset className="cape-option">
+        <legend>Analysis mode</legend>
+        <label><input type="radio" name="analysis-mode" checked={!fullAnalysis} onChange={() => setFullAnalysis(false)} /><span><strong>VirusTotal + MalwareBazaar only</strong><small>Hash lookups and report; no CAPE submission.</small></span></label>
+        <label><input type="radio" name="analysis-mode" checked={fullAnalysis} onChange={() => setFullAnalysis(true)} /><span><strong>Full analysis including CAPE</strong><small>Static analysis, sandbox, memory features, and ML classification.</small></span></label>
+      </fieldset>
       <label className="dropzone"><UploadCloud size={30} /><strong>{file ? file.name : "Choose a suspicious sample"}</strong><span>{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB selected` : "The original service validates and stores the upload"}</span><input type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
       <div className="upload-actions">
-        <label className="cape-option"><input type="checkbox" checked={continueToCape} onChange={(event) => setContinueToCape(event.target.checked)} /><span><strong>Continue to CAPE Sandbox</strong><small>Submit the sample to the live CAPE task API after the analysis pipeline reaches that stage.</small></span></label>
-        <button className="button primary" disabled={!file || submitting}>{submitting ? "Submitting..." : continueToCape ? "Start with CAPE" : "Start analysis"}</button>
+        <button className="button primary" disabled={!file || submitting}>{submitting ? "Submitting..." : fullAnalysis ? "Start full analysis" : "Start analysis"}</button>
       </div>
     </form>
-    {job && <section className="panel result-panel"><div className="panel-heading"><div><span className="eyebrow">ANALYSIS JOB</span><h3>{job.filename || file?.name}</h3></div><div className="result-actions"><Badge level={job.status === "failed" ? "critical" : job.status === "completed" ? "safe" : "warning"}>{job.status}</Badge>{job.sample_id && job.status === "completed" && <><button className="icon-button report-download-icon" type="button" onClick={downloadReport} disabled={!report} title="Download PDF report" aria-label="Download PDF report"><Download size={17} /></button><button className="button secondary" type="button" onClick={downloadJsonReport} disabled={!report}><Download size={16} />JSON</button><button className="button secondary" type="button" onClick={downloadReport} disabled={!report}><Download size={16} />PDF</button></>}</div></div><div className="flow-steps" aria-label="Analysis progress">{stages.map((stage, index) => <div className={`flow-step ${index < stageIndex || job.status === "completed" ? "done" : ""} ${index === stageIndex && job.status !== "completed" ? "active" : ""}`} key={stage}><span>{index < stageIndex || job.status === "completed" ? "✓" : index + 1}</span><small>{stage}</small></div>)}</div><p className="current-stage">{currentStage}</p><div className="progress-track"><span style={{ width: job.status === "completed" || job.status === "failed" ? "100%" : `${Math.max(12, ((stageIndex + 1) / stages.length) * 100)}%` }} /></div><div className="result-meta"><span>Job ID<strong>{job.job_id}</strong></span><span>Sample ID<strong>{job.sample_id || "Pending"}</strong></span><span>CAPE<strong>{capeStatus}</strong></span><span>Risk<strong>{report?.risk?.level || "Pending"}</strong></span></div>{report && <div className="analysis-summary"><div><span className="eyebrow">ML ANALYSIS</span><strong>{ml?.ready ? ml.label : "Unavailable"}</strong><small>{ml?.ready ? `${((ml.malware_probability ?? 0) * 100).toFixed(1)}% malware probability` : ml?.reason || "ML prediction was not available."}</small></div><div><span className="eyebrow">CAPE REPORT</span><strong>{cape?.statistics ? "Fetched" : "Not available"}</strong><small>{report.task_id ? `Task ${report.task_id}` : `Status: ${capeStatus}`}</small></div></div>}{job.error && <Notice>{job.error}</Notice>}</section>}
-    <section className="info-strip"><FileSearch size={19} /><div><strong>Preserved pipeline</strong><p>Static analysis, YARA, intelligence lookups, memory features, ML scoring, CAPE, and report generation remain in the original service.</p></div></section>
+    {job && <section className="panel result-panel"><div className="panel-heading"><div><span className="eyebrow">ANALYSIS JOB</span><h3>{job.filename || file?.name}</h3></div><div className="result-actions"><Badge level={job.status === "failed" ? "critical" : job.status === "completed" ? "safe" : "warning"}>{job.status}</Badge>{job.sample_id && job.status === "completed" && <><button className="icon-button report-download-icon" type="button" onClick={downloadReport} disabled={!report} title="Download PDF report" aria-label="Download PDF report"><Download size={17} /></button><button className="button secondary" type="button" onClick={downloadJsonReport} disabled={!report}><Download size={16} />JSON</button><button className="button secondary" type="button" onClick={downloadReport} disabled={!report}><Download size={16} />PDF</button></>}</div></div><div className="flow-steps" aria-label="Analysis progress">{stages.map((stage, index) => <div className={`flow-step ${index < stageIndex || job.status === "completed" ? "done" : ""} ${index === stageIndex && job.status !== "completed" ? "active" : ""}`} key={stage}><span>{index < stageIndex || job.status === "completed" ? "✓" : index + 1}</span><small>{stage}</small></div>)}</div><p className="current-stage">{currentStage}</p><div className="progress-track"><span style={{ width: job.status === "completed" || job.status === "failed" ? "100%" : `${Math.max(12, ((stageIndex + 1) / stages.length) * 100)}%` }} /></div><div className="result-meta"><span>Job ID<strong>{job.job_id}</strong></span><span>Sample ID<strong>{job.sample_id || "Pending"}</strong></span><span>Threat intel<strong>{report?.threat_intel?.known ? report.threat_intel.malicious ? "Malicious" : "Known" : "No match"}</strong></span>{job.full_analysis && <><span>CAPE<strong>{report?.cape?.status || report?.cape?.task?.status || "Pending"}</strong></span><span>ML<strong>{report?.ml?.ready ? report.ml.label : report?.ml?.reason || "Pending"}</strong></span></>}<span>Risk<strong>{report?.risk?.level || "Pending"}</strong></span></div>{job.error && <Notice>{job.error}</Notice>}</section>}
+    <section className="info-strip"><FileSearch size={19} /><div><strong>{fullAnalysis ? "Full malware analysis" : "Threat-intelligence-only analysis"}</strong><p>{fullAnalysis ? "Full mode uses static analysis, the configured CAPE sandbox, memory features, and ML. Run it only with a trusted, isolated CAPE environment." : "Checks VirusTotal and MalwareBazaar by file hash. No sample is submitted to CAPE."}</p></div></section>
   </>;
 }

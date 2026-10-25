@@ -13,10 +13,10 @@ export function getHealth() {
   return request("/health");
 }
 
-export function uploadSample(file, continueToCape = false) {
+export function uploadSample(file, fullAnalysis = false) {
   const form = new FormData();
   form.append("file", file);
-  form.append("continue_to_cape", String(continueToCape));
+  form.append("full_analysis", String(fullAnalysis));
   return request("/analyze", { method: "POST", body: form });
 }
 

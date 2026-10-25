@@ -1,0 +1,39 @@
+{
+  "file_identification": {
+    "size": 160556,
+    "extension": ".zip",
+    "magic": "zip",
+    "mime": "application/zip"
+  },
+  "hashes": {
+    "md5": "4b2a571d6af8d29063537ce1695cd80d",
+    "sha1": "1eef9a5843e2dbecfc7164890e2fc57fbe7a27a9",
+    "sha256": "af46d9f89dc815527f053a89014840674aacce687a23092fd4197bd78750c00f"
+  },
+  "file_entropy": 7.974341336665752,
+  "pe_analysis": {
+    "is_pe": false,
+    "architecture": "Unknown",
+    "entry_point": null,
+    "image_base": null,
+    "sections": [],
+    "imports": {},
+    "exports": [],
+    "tls_callbacks": false,
+    "resources": [],
+    "debug_info": false,
+    "version_info": {},
+    "error": "'DOS Header magic not found.'"
+  },
+  "strings": {
+    "urls": [],
+    "ips": [],
+    "registry": [],
+    "suspicious_commands": []
+  },
+  "yara_matches": [
+    {
+      "error": "/media/ansh/2096AA8B96AA6150/phishing link frontend-20260923T125653Z-1-001/phishing link frontend/Ransomware/yara_rules/Yara-Rules/./malware/MALW_AZORULT.yar(23): invalid field name \"sync\""
+    }
+  ]
+}

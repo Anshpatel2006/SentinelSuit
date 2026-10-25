@@ -13,10 +13,6 @@ flowchart LR
     api --> pipeline
     pipeline --> vt[VirusTotal]
     pipeline --> mb[MalwareBazaar]
-    pipeline --> cape[CAPE sandbox]
-    pipeline --> vol[Volatility 3]
-    pipeline --> yara[YARA]
-    pipeline --> model[Random Forest model]
     pipeline --> reports[JSON HTML PDF reports]
     api --> reports
 ```
@@ -28,22 +24,13 @@ flowchart TD
     start([Sample received]) --> validate[Validate and store]
     validate --> hash[Compute MD5 SHA-1 SHA-256]
     hash --> intel[Threat-intelligence lookup]
-    intel --> known{Known sample?}
-    known -->|Yes| knownReport[Create known-sample report]
-    known -->|No| static[Static analysis and YARA]
-    static --> cape{CAPE available?}
-    cape -->|No| degraded[Record degraded dynamic stage]
-    cape -->|Yes| behavior[Execute in isolated CAPE VM]
-    behavior --> memory[Collect memory dump and behavior]
-    memory --> features[Extract MalMem55 features]
-    degraded --> features
-    features --> complete{55 features complete?}
-    complete -->|No| blocked[Block ML and explain missing features]
-    complete -->|Yes| classify[Random Forest classification]
-    classify --> ioc[Extract IOCs and calculate risk]
-    blocked --> ioc
-    knownReport --> output[Generate JSON HTML PDF]
-    ioc --> output
+    intel --> risk[Calculate intelligence-based risk]
+    risk --> output[Generate JSON HTML PDF]
+    intel -->|Full analysis selected| static[Static analysis]
+    static --> cape[Submit to configured CAPE]
+    cape --> memory[Extract memory features]
+    memory --> ml[Run ML when features are complete]
+    ml --> output
     output --> finish([Report available])
 ```
 
@@ -57,23 +44,21 @@ sequenceDiagram
     participant P as Pipeline
     participant TI as Threat Intel
     participant CAPE as CAPE
-    participant ML as MalMem55 and Random Forest
     participant R as Reporting
 
     Analyst->>UI: Submit sample
     UI->>API: Create analysis job
     API->>P: Validate, hash, and start job
     P->>TI: Query hashes
-    TI-->>P: Known or unknown result
-    alt Known sample
-        P->>R: Build early report
-    else Unknown sample
+    TI-->>P: Lookup results
+    alt Lookup-only mode
+        P->>R: Calculate risk and build report
+    else Full-analysis mode
         P->>P: Run static analysis
-        P->>CAPE: Submit isolated task
+        P->>CAPE: Submit sample to configured sandbox
         CAPE-->>P: Behavior and memory results
-        P->>ML: Extract features and classify
-        ML-->>P: Prediction or blocked status
-        P->>R: Extract IOCs and calculate risk
+        P->>P: Extract memory features and classify
+        P->>R: Calculate risk and build full report
     end
     R-->>API: Persist report and job result
     API-->>UI: Status and report link
@@ -87,11 +72,6 @@ flowchart TB
     browser[Analyst browser] --> frontend[Frontend host]
     frontend --> api[FastAPI service]
     api --> storage[(Samples and reports)]
-    api --> lab[Isolated analysis network]
-    lab --> cape[CAPE controller]
-    cape --> vm[Windows analysis VM]
-    lab --> vol[Volatility 3 worker]
-    api --> model[(Model artifacts)]
     api --> providers[External intelligence APIs]
 ```
 

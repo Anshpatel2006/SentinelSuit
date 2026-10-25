@@ -5,14 +5,14 @@
 ```text
 src/malware_platform/
 ├── api/              FastAPI app, routes, job store, schemas
-├── analysis/         Static analysis, CAPE client, Authenticode
+├── analysis/         Static analysis, CAPE client, Authenticode (full mode)
 ├── cli/              CLI entry point (malware-analyze)
 ├── ingestion/        Upload validation and hashing
 ├── intel/            VirusTotal & MalwareBazaar lookups
-├── memory/           MalMem55 Volatility extractor + plugins
-├── ml/               Random Forest engine and training
+├── memory/           MalMem55 Volatility extractor + plugins (full mode)
+├── ml/               Random Forest engine and training (full mode)
 ├── pipeline/         End-to-end orchestration (flow.py)
-├── reporting/        Reports, IOC extraction, risk scoring
+├── reporting/        Threat-intelligence reports and risk scoring
 └── config.py         Central configuration
 ```
 
@@ -30,32 +30,23 @@ MD5 / SHA1 / SHA256
   v
 VirusTotal + MalwareBazaar
   |
-  +---- Known ----> Detection Report ------------------+
-  |                                                     |
-  +---- Unknown -> Static Analysis -> CAPE Sandbox      |
-                                   |                     |
-                                   v                     |
-                              Behavior Report             |
-                                   |                     |
-                              memory.dmp                   |
-                                   |                     |
-                              Volatility 3                |
-                                   |                     |
-                             MalMem2022 55                 |
-                                   |                     |
-                              Random Forest                |
-                                   |                     |
-                         Benign / Malware                 |
-                              |       |                   |
-                              |       +--> IOC extraction|
-                              |                           |
-                              +------------+--------------+
-                                           |
-                                           v
-                                    AI Risk Assessment
-                                           |
-                                           v
-                                   JSON / HTML / PDF
-                                           |
-                                          END
+  +---- Lookup only ------------------------------+
+  |                                               |
+  +---- Full mode -> Static Analysis -> CAPE      |
+                                    |             |
+                                    v             |
+                             Memory Features      |
+                                    |             |
+                                    v             |
+                             ML Classification    |
+                                    |             |
+                                    +-------------+
+                                                  |
+                                                  v
+                                        Risk Assessment
+                                                  |
+                                                  v
+                                         JSON / HTML / PDF
+                                                  |
+                                                 END
 ```

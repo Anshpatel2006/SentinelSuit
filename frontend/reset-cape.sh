@@ -29,12 +29,13 @@ if [ "$confirmation" != "RESET" ]; then
 fi
 
 echo "[1/7] Stopping CAPE..."
-systemctl stop cape.service || true
+systemctl stop cape.service
 
-echo "[2/7] Stopping CAPE/Cuckoo processes..."
-pkill -f "cuckoo.py" || true
-pkill -f "cape" || true
-sleep 2
+echo "[2/7] Verifying CAPE/Cuckoo processes stopped..."
+if systemctl is-active --quiet cape.service; then
+    echo "CAPE is still active; refusing to delete its data."
+    exit 1
+fi
 
 echo "[3/7] Removing CAPE databases..."
 find "$CAPE_DIR" -maxdepth 3 -type f \
